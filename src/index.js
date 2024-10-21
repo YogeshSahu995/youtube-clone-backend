@@ -1,11 +1,11 @@
-// required('dotenv').config({path: '../env'})
+import express from 'express'
 import dotenv from "dotenv"
 import connectDB from "./db/index.js";
-import { app } from "./app.js";
 
-dotenv.config({ path: '../.env' })
+const app = express()
+dotenv.config({ path: './.env' })
 
-connectDB() // when async function end return promise
+connectDB()
 .then(() => {
     app.on("error", (error) => {
         console.log(`ERRR: ${error}`)
@@ -19,44 +19,3 @@ connectDB() // when async function end return promise
 .catch((error) => {
     console.log("MONGO db connection failed !!! ", error)
 })
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-{FIRST APPROACH}
-import express from 'express'
-const app = express()
-
-Self-Invoking Async Function
-;( async () => {
-    try {
-        await mongoose.connect(`${process.env.MONGODB_URL}/${DB_NAME}`)
-
-        app.on("errror", (error) => {
-            console.log("ERRR: ", error)
-            throw error
-        })
-
-        app.listen(process.env.PORT, () => {
-            console.log("App is listening")
-        })
-
-    } catch (error) {
-        console.error("Error: ", error)
-        throw error
-    }
-} )()
-*/
