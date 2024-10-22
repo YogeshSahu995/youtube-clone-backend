@@ -3,7 +3,7 @@ class ApiError extends Error {
         statusCode,
         message= "Something went wrong",
         errors = [],
-        statck = ""
+        stack = ""
     ){
         super(message)
         this.statusCode = statusCode
@@ -12,7 +12,7 @@ class ApiError extends Error {
         this.success = false
         this.errors = errors
         
-        if(statck){
+        if(stack){
             this.stack = stack
         }else{
             Error.captureStackTrace(this, this.constructor)
@@ -21,3 +21,22 @@ class ApiError extends Error {
 }
 
 export {ApiError}
+
+/* how use : -
+
+import { ApiError } from './path-to-api-error';
+
+// A sample Express route
+app.get('/users/:id', async (req, res, next) => {
+    try {
+        const user = await getUserById(req.params.id);
+        if (!user) {
+            throw new ApiError(404, "User not found");
+        }
+        res.json(user);
+    } catch (err) {
+        next(err);  // Pass the error to Express's error handling middleware
+    }
+}); 
+
+*/
