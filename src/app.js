@@ -14,4 +14,16 @@ app.use(express.urlencoded({extended: true, limit: "16kb" })) //yogesh%20kumar t
 app.use(express.static("public"))
 app.use(cookieParser())
 
+
+//routes import 
+import userRouter from "./routes/user.routes.js"
+
+//routes declaration
+app.use("/api/v1/users", userRouter) 
+/*
+ye mount middleware :- means here a base path where the middleware or router mounted. Any request that starts with '/api/v1/users' will be handled by router (or middleware) which is passed as the second argument
+http://localhost:8000/api/v1/users/register
+*/
+
+
 export {app} 
