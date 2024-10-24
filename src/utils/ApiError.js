@@ -24,10 +24,10 @@ export {ApiError}
 
 /* how use : -
 
-import { ApiError } from './path-to-api-error';
+import { ApiError } from "./path-to-api-error";
 
 // A sample Express route
-app.get('/users/:id', async (req, res, next) => {
+app.get("/users/:id", async (req, res, next) => {
     try {
         const user = await getUserById(req.params.id);
         if (!user) {
@@ -35,7 +35,7 @@ app.get('/users/:id', async (req, res, next) => {
         }
         res.json(user);
     } catch (err) {
-        next(err);  // Pass the error to Express's error handling middleware
+        next(err);  // Pass the error to Express"s error handling middleware
     }
 }); 
 
