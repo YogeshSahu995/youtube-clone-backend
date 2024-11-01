@@ -18,6 +18,7 @@ router.route("/login").post(loginUser)
 
 //secured routes
 router.route("/logout").post(verifyJWT, logoutUser) // by verifyJWT insert object on req.user
+router.route("/refresh-token").post(registerUser)
 export default router
 
 /*

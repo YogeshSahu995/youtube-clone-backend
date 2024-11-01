@@ -3,14 +3,16 @@ import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from '../utils/ApiResponse.js'
+import jwt from "jsonwebtoken"
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
         const user = await User.findById(userId)
+        //genrate Tokens
         const accessToken = user.generateAccessToken()
-        console.log("accessToken ",accessToken)
         const refreshToken = user.generateRefreshToken()
-        console.log("refreshToken ",refreshToken)
+        
+        //save refreshToken
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false }) //required field is kicked when user.save() simply use
         return { accessToken, refreshToken }
@@ -176,6 +178,52 @@ const logoutUser = asyncHandler(async (req, res) => {
             .json( new ApiResponse (200, {}, "User Logged Out successfully"))
 }) 
 
+const refreshAccessToken = asyncHandler(async(req, res) => {
+    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+    
+    if(incomingRefreshToken){
+        throw new ApiError(401, "unauthorized request!!")
+    }
 
-export { registerUser, loginUser, logoutUser }
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+    
+        const user = await User.findById(decodedToken?._id).select("-password")
+    
+        if(!user){
+            throw new ApiError(401, "Invalid Refresh Token")
+        }
+    
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new ApiError(401, "Refresh token is expired or user")
+        }
+    
+        const {accessToken, newrefreshToken} = await generateAccessAndRefreshTokens(user._id)
+    
+        const options = {
+            httpOnly: true,
+            secure: true
+        }
+    
+        res.status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", newrefreshToken, options)
+        .json(new ApiResponse(200, {accessToken, refreshToken: newrefreshToken}, "Access Token successfully refreshed"))
+    } catch (error) {
+        throw new ApiError(401, error?.message || "invalid refresh Token")
+    }
+})
+
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken }
+
+/*
+what work of refreshToken and accessToken
+* do not give userdetails repeat
+* accessToken is short lived and or ye user ke pass hoga and don't save any where
+* refreshToken is store in database(server-side) and also in local-storage(client-side)
+* when accessToken of user is invalidate then by help of refreshToken generate accessToken and refreshToken again
+* by client-side hit a endpoint and by req get refreshToken then match database refreshToken then make new tokens
+* when the client requests a new access token, the server checks its database and issues a new access token if the refresh token is valid
+*/
 
