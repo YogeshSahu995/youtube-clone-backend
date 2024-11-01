@@ -36,7 +36,7 @@ const userSchema = new Schema({
     },
     coverImage: {
         type: String,// cloudinary url
-        default: null
+        default: null,
     },
     password: {
         type: String,
@@ -57,6 +57,8 @@ userSchema.pre("save", async function( next ) {
 })
 
 //isPasswordCorrect is good way to compare a password during authentication
+
+// this method is not access by User it's access by document which is in db
 userSchema.methods.isPasswordCorrect = async function (password){
     return await bcrypt.compare(password, this.password) // return true or false
 }

@@ -5,7 +5,8 @@ class ApiError extends Error {
         errors = [],
         stack = ""
     ){
-        super(message)
+        super(message) //use super() inside a derived (child) class to access and initialize properties or methods from the base (parent) class
+        // If a child class has its own constructor, it must call super() before it can access this.
         this.statusCode = statusCode
         this.data = null
         this.message = message

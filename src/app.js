@@ -10,9 +10,9 @@ app.use(cors({
 }))
 
 app.use(express.json({limit: "16kb"})) //form data 
-app.use(express.urlencoded({extended: true, limit: "16kb" })) //yogesh%20kumar to yogesh kumar 
+app.use(express.urlencoded({extended: true, limit: "16kb" })) //yogesh%20kumar to yogesh kumar & extended usefull for nested object 
 app.use(express.static("public"))
-app.use(cookieParser())
+app.use(cookieParser()) //
 
 
 //routes import 
