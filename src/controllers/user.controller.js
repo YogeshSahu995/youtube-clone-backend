@@ -219,11 +219,13 @@ export { registerUser, loginUser, logoutUser, refreshAccessToken }
 
 /*
 what work of refreshToken and accessToken
-* do not give userdetails repeat
-* accessToken is short lived and or ye user ke pass hoga and don't save any where
-* refreshToken is store in database(server-side) and also in local-storage(client-side)
-* when accessToken of user is invalidate then by help of refreshToken generate accessToken and refreshToken again
-* by client-side hit a endpoint and by req get refreshToken then match database refreshToken then make new tokens
-* when the client requests a new access token, the server checks its database and issues a new access token if the refresh token is valid
+During login we generate 2 token that is Access and Refresh Token
+refresh token was saved in database
+access and refresh token cookie set in chrome
+accessToken is shortime and refreshToken is longtime
+when user access-token is expired so, touch the endpoint which give req.cookies.refreshToken
+then decode the token get id of user then by module findById
+and compare the refresh token then generateAccessAndRefreshToken 
+Then set by res.cookie("accessToken")
 */
 
