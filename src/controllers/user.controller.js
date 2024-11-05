@@ -1,7 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
-import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { uploadOnCloudinary, removeUploadedImage } from "../utils/cloudinary.js"
 import { ApiResponse } from '../utils/ApiResponse.js'
 import jwt from "jsonwebtoken"
 
@@ -264,57 +264,172 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
 })
 
 const updateUserAvatar = asyncHandler(async(req, res) => {
-    const avatarLocalPath = req.file?.path
+    // remove prev image 
+    const user = await User.findById(req.user?._id)
+    const prevImageUrl = user?.avatar
+    const result = await removeUploadedImage(prevImageUrl)
 
+    if(!result){
+        throw new ApiError(500, "Issue in removing image")
+    }
+
+    //add another image
+    const avatarLocalPath = req.file?.path
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar file is missing")
     }
-
     const avatar = await uploadOnCloudinary(avatarLocalPath)
-
     if(!avatar.url){
         throw new ApiError(500, "Error while uploading on avatar")
     }
+    user.avatar = avatar.url
 
-    const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                avatar: avatar.url,
-            }
-        },
-        {new: true}
-    ).select("-password")
+    await user.save({validateBeforeSave: false}).select("-password -refreshToken")
     return res.status(200)
     .json(new ApiResponse(200, user, "succesfully changed avatar" ))
 })
 
 const updateUserCoverImage = asyncHandler(async(req, res) => {
-    const coverImageLocalPath = req.file?.path
+    // remove prev image 
+    const user = await User.findById(req.user?._id)
+    const prevImageUrl = user?.coverImage
+    const result = await removeUploadedImage(prevImageUrl)
 
-    if(!coverImageLocalPath){
-        throw new ApiError(400, "coverImage file is missing")
+    if(!result){
+        throw new ApiError(500, "Issue in removing image")
     }
 
+    //add another image
+    const coverImageLocalPath = req.file?.path
+    if(!coverImageLocalPath){
+        throw new ApiError(400, "Avatar file is missing")
+    }
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
-
     if(!coverImage.url){
         throw new ApiError(500, "Error while uploading on coverImage")
     }
+    user.coverImage = coverImage.url
 
-    const user = await User.findByIdAndUpdate(
-        req.user?._id,
-        {
-            $set: {
-                coverImage: coverImage.url,
-            }
-        },
-        {new: true}
-    ).select("-password")
+    await user.save({validateBeforeSave: false}).select("-password -refreshToken")
     return res.status(200)
     .json(new ApiResponse(200, user, "succesfully changed coverImage" ))
 })
 
+const getUserChannelProfile = asyncHandler(async(req, res) => {
+    const {username} = req.params //search name
+
+    if(!username?.trim()){
+        throw new ApiError(400, "username is missing")
+    }
+
+    const channel = await User.aggregate([
+        {
+            $match: {
+                username: username?.toLowerCase()
+            }
+        },
+        {
+            $lookup: { // duser collection ke document se match karega 
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "channel",
+                as: "subscribers" // it's return [{channel:"same", subscriber:""}, {}]
+            }
+        },
+        {
+            $lookup: { // this array for hum kitne channels ke subscriber hai 
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "subscriber",
+                as: "subscribedTo"
+            }
+        },
+        {
+            $addFields: {
+                subscribersCount: {
+                    $size: "$subscribers" //$ use becoz it's field
+                },
+                channelsSubscribedToCount: {
+                    $size: "$subscribedTo"
+                },
+                isSubscribed: {
+                    $cond: {
+                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},//Yes, exactly! In MongoDB's aggregation framework, you can access fields in nested arrays and objects directly using dot notation without needing to explicitly loop through the array. This feature is part of how MongoDB allows you to work with complex data structures efficiently.
+                        then: true, 
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $project: { //select field pass
+                fullname: 1,
+                username: 1,
+                email: 1,
+                avatar: 1,
+                coverImage: 1,
+                subscribersCount: 1,
+                channelsSubscribedToCount: 1,
+                isSubscribed: 1
+            }
+        }
+    ])
+
+    if(!channel?.length){
+        throw new ApiError(404, "Channel does not exists")
+    }
+
+    return res.status(200)
+    .json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
+})
+
+const getWatchHistory = asyncHandler(async(req, res) => {
+    // req.user._id // Interview :- ye string hi pass kerta hai mongodb objectId nhi kerta jab hum koi query use kerte hai to mongoose behind the seen string ko as ObjectId use kerta hai
+    const user = await User.aggregate([
+        {
+            $match: {
+                _id: new mongoose.Types.ObjectId(req.user._id) //but yha per mongoose kaam nhi kerta (manually)
+            }
+        },
+        {
+            $lookup: {
+                from: "videos",
+                localField: "watchHistory",
+                foreignField: "_id",
+                as: "watchHistory",
+                pipeline: [ // when fetched the document of video also run $lookup for owner field 
+                    {
+                        $lookup: {
+                            from: "users", //// Join with users collection for video owner details
+                            localField: "owner",
+                            foreignField: "_id",
+                            as: "owner",
+                            pipeline: [ //when fetched the document with also run $project for specific field of user was store in owner field
+                                {
+                                    $project: {
+                                        avatar: 1,
+                                        username: 1,
+                                        fullname: 1
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first: "$owner"
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    ])
+
+    return res.status(200)
+    .json(new ApiResponse(200, user[0].watchHistory, "watch history fetched successfully"))
+})
 
 
 export { 
@@ -326,7 +441,9 @@ export {
     getCurrenctUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile,
+    getWatchHistory
 }
 
 /*
