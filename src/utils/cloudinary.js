@@ -26,7 +26,7 @@ const uploadOnCloudinary = async (localFilePath) => {
 
 const removeUploadedImage = async (imageUrl) => {
     try {
-        if(!imageUrl) return null
+        if(!imageUrl) return true
         const urlParts = imageUrl.split('/')
         const publicIdWithExtension = urlParts[urlParts.length-1]
         const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "")

@@ -1,24 +1,54 @@
 import { Router } from "express";
-import { loginUser, logoutUser, registerUser } from "../controllers/user.controller.js";
+import { loginUser, logoutUser, registerUser, refreshAccessToken, changeCurrentPassword, getCurrenctUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getUserChannelProfile, getWatchHistory } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 const router = Router()
-router.route("/register").post(upload.fields([ //multer middleware : add fields in req object 
-            {
-                  name: "avatar",
-                  maxCount: 1
-            }, 
-            {
-                  name: "coverImage",
-                  maxCount: 1
-            }]), registerUser
-      )
-router.route("/login").post(loginUser)
+
+router.route("/register")
+.post(upload.fields([ //multer middleware : add fields in req object 
+      {
+            name: "avatar",
+            maxCount: 1
+      }, 
+      {
+            name: "coverImage",
+            maxCount: 1
+      }]), 
+registerUser)
+
+router.route("/login")
+.post(loginUser)
 
 //secured routes
-router.route("/logout").post(verifyJWT, logoutUser) // by verifyJWT insert object on req.user
-router.route("/refresh-token").post(registerUser)
+router.route("/logout")
+.post(verifyJWT, logoutUser) // by verifyJWT insert object on req.user
+
+router.route("/refresh-token")
+.post(refreshAccessToken)
+
+router.route("/change-password")
+.post(verifyJWT, changeCurrentPassword)
+
+router.route("/current-user")
+.get(verifyJWT, getCurrenctUser)
+
+//PATCH only updates specific fields. This makes it efficient when you only want to change part of the data.
+router.route("/update-account")
+.patch(verifyJWT, updateAccountDetails)
+
+router.route("/update-avatar")
+.patch(verifyJWT, upload.single("avatar"), updateUserAvatar)
+
+router.route("/update-cover-image")
+.patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage)
+
+router.route("/c/:username")
+.get(verifyJWT, getUserChannelProfile)
+
+router.route("/watch-history")
+.get(verifyJWT, getWatchHistory)
+
 export default router
 
 /*
