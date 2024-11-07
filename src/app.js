@@ -17,9 +17,11 @@ app.use(cookieParser()) //
 
 //routes import 
 import userRouter from "./routes/user.routes.js"
+import subscriptionRouter from "./routes/subscription.routes.js"
 
 //routes declaration
 app.use("/api/v1/users", userRouter) 
+app.use("/api/v1/subscriptions", subscriptionRouter)
 /*
 ye mount middleware :- means here a base path where the middleware or router mounted. Any request that starts with '/api/v1/users' will be handled by router (or middleware) which is passed as the second argument
 http://localhost:8000/api/v1/users/register
