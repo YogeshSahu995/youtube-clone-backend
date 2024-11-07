@@ -1,4 +1,4 @@
-import mongoose, {Schema, model} from "mongoose";
+import {Schema, model} from "mongoose";
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 
@@ -48,7 +48,7 @@ const userSchema = new Schema({
 
 }, {timestamps: true})
 
-// .pre("save") middleware use to hash passwords, which is prefect for ensuring that passwords are never stored in plain text
+// .pre("save") middleware(also hook) use to hash passwords, which is prefect for ensuring that passwords are never stored in plain text
 userSchema.pre("save", async function( next ) {
     if(!this.isModified("password")) return next() //jab password modified nhi hoga to next() hoga
 

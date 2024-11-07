@@ -3,6 +3,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { User } from "../models/user.model.js"
 import { uploadOnCloudinary, removeUploadedImage } from "../utils/cloudinary.js"
 import { ApiResponse } from '../utils/ApiResponse.js'
+import mongoose from 'mongoose'
 import jwt from "jsonwebtoken"
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -158,8 +159,8 @@ const loginUser = asyncHandler(async (req, res) => {
 const logoutUser = asyncHandler(async (req, res) => {
     await User.findByIdAndUpdate(req.user._id,
         {
-            $set: {
-                refreshToken: undefined
+            $unset: {
+                refreshToken: 1 // this removes the field from document
             }
         },
         {
@@ -181,12 +182,12 @@ const logoutUser = asyncHandler(async (req, res) => {
 const refreshAccessToken = asyncHandler(async (req, res) => {
     const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
 
-    if (incomingRefreshToken) {
+    if (!incomingRefreshToken) {
         throw new ApiError(401, "unauthorized request!!")
     }
 
     try {
-        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET) // {user info...}
 
         const user = await User.findById(decodedToken?._id).select("-password")
 
@@ -198,7 +199,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new ApiError(401, "Refresh token is expired or user")
         }
 
-        const { accessToken, newrefreshToken } = await generateAccessAndRefreshTokens(user._id)
+        const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
 
         const options = {
             httpOnly: true,
@@ -207,8 +208,8 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
         res.status(200)
             .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", newrefreshToken, options)
-            .json(new ApiResponse(200, { accessToken, refreshToken: newrefreshToken }, "Access Token successfully refreshed"))
+            .cookie("refreshToken", refreshToken, options)
+            .json(new ApiResponse(200, { refreshToken }, "Access Token successfully refreshed"))
     } catch (error) {
         throw new ApiError(401, error?.message || "invalid refresh Token")
     }
@@ -244,7 +245,7 @@ const getCurrenctUser = asyncHandler(async(req, res) => {
 const updateAccountDetails = asyncHandler(async(req, res) => {
     const {fullname, email} = req.body
 
-    if(fullname && email){
+    if(!fullname || !email){
         throw new ApiError(400, "All fields are required")
     }
 
@@ -264,14 +265,17 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
 })
 
 const updateUserAvatar = asyncHandler(async(req, res) => {
-    // remove prev image 
-    const user = await User.findById(req.user?._id)
-    const prevImageUrl = user?.avatar
-    const result = await removeUploadedImage(prevImageUrl)
+    const user = await User.findById(req.user?._id).select("-password -refreshToken")
 
-    if(!result){
-        throw new ApiError(500, "Issue in removing image")
+    // remove prev image 
+    if(req.file?.path){
+        const prevImageUrl = user?.avatar
+        const result = await removeUploadedImage(prevImageUrl)
+        if(!result){
+            throw new ApiError(500, "Issue in removing image")
+        }
     }
+
 
     //add another image
     const avatarLocalPath = req.file?.path
@@ -283,20 +287,22 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
         throw new ApiError(500, "Error while uploading on avatar")
     }
     user.avatar = avatar.url
+    await user.save({validateBeforeSave: false})
 
-    await user.save({validateBeforeSave: false}).select("-password -refreshToken")
     return res.status(200)
     .json(new ApiResponse(200, user, "succesfully changed avatar" ))
 })
 
 const updateUserCoverImage = asyncHandler(async(req, res) => {
-    // remove prev image 
-    const user = await User.findById(req.user?._id)
-    const prevImageUrl = user?.coverImage
-    const result = await removeUploadedImage(prevImageUrl)
+    const user = await User.findById(req.user?._id).select("-password -refreshToken")
 
-    if(!result){
-        throw new ApiError(500, "Issue in removing image")
+    // remove prev image 
+    if(req.file?.path){
+        const prevImageUrl = user?.coverImage
+        const result = await removeUploadedImage(prevImageUrl)
+        if(!result){
+            throw new ApiError(500, "Issue in removing image")
+        }   
     }
 
     //add another image
@@ -309,14 +315,15 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
         throw new ApiError(500, "Error while uploading on coverImage")
     }
     user.coverImage = coverImage.url
+    await user.save({validateBeforeSave: false})
 
-    await user.save({validateBeforeSave: false}).select("-password -refreshToken")
     return res.status(200)
     .json(new ApiResponse(200, user, "succesfully changed coverImage" ))
 })
 
 const getUserChannelProfile = asyncHandler(async(req, res) => {
     const {username} = req.params //search name
+    // const username = req.params.username
 
     if(!username?.trim()){
         throw new ApiError(400, "username is missing")
@@ -426,6 +433,7 @@ const getWatchHistory = asyncHandler(async(req, res) => {
             }
         }
     ])
+    //AGGREGATE A
 
     return res.status(200)
     .json(new ApiResponse(200, user[0].watchHistory, "watch history fetched successfully"))
