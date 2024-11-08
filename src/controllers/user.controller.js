@@ -1,8 +1,5 @@
-import { asyncHandler } from "../utils/asyncHandler.js"
-import { ApiError } from "../utils/ApiError.js"
+import { asyncHandler, ApiError, ApiResponse, uploadOnCloudinary, removeUploadedImage } from "../utils/index.js"
 import { User } from "../models/user.model.js"
-import { uploadOnCloudinary, removeUploadedImage } from "../utils/cloudinary.js"
-import { ApiResponse } from '../utils/ApiResponse.js'
 import mongoose from 'mongoose'
 import jwt from "jsonwebtoken"
 
