@@ -24,10 +24,10 @@ const uploadOnCloudinary = async (localFilePath) => {
     }
 }
 
-const removeUploadedImage = async (imageUrl) => {
+const removeOnCloudinary = async (url) => {
     try {
-        if(!imageUrl) return true
-        const urlParts = imageUrl.split('/')
+        if(!url) return true
+        const urlParts = url.split('/')
         const publicIdWithExtension = urlParts[urlParts.length-1]
         const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "")
         const result = await cloudinary.uploader.destroy(publicId)
@@ -37,4 +37,17 @@ const removeUploadedImage = async (imageUrl) => {
     }
 }
 
-export {uploadOnCloudinary, removeUploadedImage}
+const removeVideoOnCloudinary = async (videoUrl) => {
+    try {
+        if(!videoUrl) return true
+        const urlParts = videoUrl.split('/')
+        const publicIdWithExtension = urlParts[urlParts.length-1]
+        const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "")
+        const result = await cloudinary.uploader.destroy(publicId, {resource_type: 'video'})
+        return result
+    } catch (error) {
+        return null
+    }
+}
+
+export {uploadOnCloudinary, removeOnCloudinary, removeVideoOnCloudinary}

@@ -5,15 +5,7 @@ import mongoose, { isValidObjectId } from "mongoose"
 
 const createTweet = asyncHandler(async (req, res) => {
 
-    if (!isValidObjectId(req.user?._id)) {
-        throw new ApiError(400, "Invalid user Id")
-    }
-
     const user = await User.findById(req.user?._id)
-
-    if (!user) {
-        throw new ApiError(400, "Unauthorized request")
-    }
 
     const { content } = req.body
 
@@ -52,7 +44,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     const allTweets = await Tweet.aggregate([
         {
             $match: {
-                owner: user._id
+                owner: user._id // how Q..
             }
         },
         {

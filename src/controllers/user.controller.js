@@ -1,4 +1,4 @@
-import { asyncHandler, ApiError, ApiResponse, uploadOnCloudinary, removeUploadedImage } from "../utils/index.js"
+import { asyncHandler, ApiError, ApiResponse, uploadOnCloudinary, removeOnCloudinary } from "../utils/index.js"
 import { User } from "../models/user.model.js"
 import mongoose from 'mongoose'
 import jwt from "jsonwebtoken"
@@ -6,11 +6,9 @@ import jwt from "jsonwebtoken"
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
         const user = await User.findById(userId)
-        //genrate Tokens
         const accessToken = user.generateAccessToken()
         const refreshToken = user.generateRefreshToken()
 
-        //save refreshToken
         user.refreshToken = refreshToken
         await user.save({ validateBeforeSave: false }) //required field is kicked when user.save() simply use
         return { accessToken, refreshToken }
@@ -21,68 +19,53 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
     const { fullname, email, username, password } = req.body
-    // console.log("email", email)
-    // console.log(req.body)
     console.log(req.files)
 
-    //validation..
     if (
-        [fullname, email, username, password].some((field) => field?.trim() === "") //some() return boolean value
+        [fullname, email, username, password].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are compailsory and required")
     }
 
-    //check user exist..
     const existedUser = await User.findOne({
-        $or: [{ email: email }, { username: username }] // any condition in $or will true so it can search
+        $or: [{ email: email }, { username: username }]
     })
 
-    // console.log(existedUser)
 
     if (existedUser) {
         throw new ApiError(409, "User with email or username already exists")
     }
 
-    //get local path of image..
-    const avatarLocalPath = req.files?.avatar[0]?.path //serverpath
-    // const coverImageLocalPath = req.files?.coverImage[0]?.path
+    const avatarLocalPath = req.files?.avatar[0]?.path 
+
     let coverImageLocalPath;
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files.coverImage[0].path
     }
 
-
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar Image is required")
     }
 
-    // console.log(avatarLocalPath)
-
-    //upload on cloudinary..
     const avatar = await uploadOnCloudinary(avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath) // when coverImageLocalPath is undefined so cloudinary never throw error
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath) 
+    // when coverImageLocalPath is undefined so cloudinary never throw error
 
-    // console.log(avatar) // {...} //response of cloudinary
-
-    //Check avatar image is upload on cloudinary..
     if (!avatar) {
         throw new ApiError(400, "avatar Image is required")
     }
 
-    //Create user object and insert in db
     const user = await User.create({
         fullname,
         avatar: avatar.url,
-        coverImage: coverImage?.url || "", //check on coverImage
+        coverImage: coverImage?.url || "", 
         email,
         password,
         username: username.toLowerCase()
     })
 
-    //remove password and refresh token field from response 
-    const createdUser = await User.findById(user._id).select("-password -refreshToken") //ye fields user ko nhi deni
+    const createdUser = await User.findById(user._id).select("-password -refreshToken")
 
-    //User is created or not in mongodb
     if (!createdUser) {
         throw new ApiError(500, "Something went wrong while registering the user")
     }
@@ -90,31 +73,10 @@ const registerUser = asyncHandler(async (req, res) => {
     return res.status(201).json(
         new ApiResponse(200, createdUser, "User registered successfully")
     )
-
-    /*
-    REGISTER USER
-    
-    get user details from frontend                  //postman
-    validation on details (not empty)               //if
-    check if user already exists:- username, email  //module.findOne({$or: [{}, {}]})
-    check for images, check for avatar              // req.files?.avatar?.path
-    upload them to cloudinary, avatar check          // upload(avatarLocalPath), if(!avatar) throw new ApiError()
-    create user object - create entry in db          // module.create({}), module.findById(user.id)
-    remove password and refresh token field from response   // createdUser.select("-password -refreshToken")
-    check for user creation                             // if(!createdUser)
-    return response                       // res.status(201).json( new ApiResponse(200, createdUser, "User registered successfully"))
-    
-    */
 })
 
 const loginUser = asyncHandler(async (req, res) => {
-    /*
-        req body -> get user email and password
-        check email is exist in db
-        check on password 
-        access and refresh token
-        send cookie
-    */
+
     const { email, username, password } = req.body
 
     if (!(username || email)) {
@@ -267,7 +229,7 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
     // remove prev image 
     if(req.file?.path){
         const prevImageUrl = user?.avatar
-        const result = await removeUploadedImage(prevImageUrl)
+        const result = await removeOnCloudinary(prevImageUrl)
         if(!result){
             throw new ApiError(500, "Issue in removing image")
         }
@@ -296,7 +258,7 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
     // remove prev image 
     if(req.file?.path){
         const prevImageUrl = user?.coverImage
-        const result = await removeUploadedImage(prevImageUrl)
+        const result = await removeOnCloudinary(prevImageUrl)
         if(!result){
             throw new ApiError(500, "Issue in removing image")
         }   
