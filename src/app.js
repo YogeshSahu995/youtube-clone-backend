@@ -21,7 +21,8 @@ import {
     subscriptionRouter, 
     tweetRouter, 
     videoRouter, 
-    commentRouter
+    commentRouter,
+    likeRouter
 } from "./routes/index.routes.js"
 
 //routes declaration
@@ -30,6 +31,7 @@ app.use("/api/v1/subscriptions", subscriptionRouter)
 app.use("/api/v1/tweets", tweetRouter)
 app.use("/api/v1/videos", videoRouter)
 app.use("/api/v1/comments", commentRouter)
+app.use("/api/v1/likes", likeRouter)
 /*
 ye mount middleware :- means here a base path where the middleware or router mounted. Any request that starts with '/api/v1/users' will be handled by router (or middleware) which is passed as the second argument
 http://localhost:8000/api/v1/users/register
