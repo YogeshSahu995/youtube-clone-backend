@@ -280,6 +280,7 @@ const updateUserCoverImage = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, user, "succesfully changed coverImage" ))
 })
 
+//most imp controller
 const getUserChannelProfile = asyncHandler(async(req, res) => {
     const {username} = req.params //search name
     // const username = req.params.username
@@ -375,7 +376,7 @@ const getWatchHistory = asyncHandler(async(req, res) => {
                                     $project: {
                                         avatar: 1,
                                         username: 1,
-                                        fullname: 1
+                                        id: 1
                                     }
                                 }
                             ]

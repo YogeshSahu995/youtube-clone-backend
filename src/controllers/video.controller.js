@@ -34,12 +34,6 @@ const getAllVideos = asyncHandler(async(req, res) => {
     }
 
     const allVideos = await Video.aggregatePaginate(aggregate, options)
-    
-    console.log(allVideos)
-
-    if(!allVideos?.totalDocs > 0){
-        throw new ApiError(500, "No videos found")
-    }
 
     return res.status(200)
     .json(new ApiResponse(200, allVideos, "Successfully fetched all videos"))

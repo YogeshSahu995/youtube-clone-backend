@@ -36,6 +36,9 @@ const getUserTweets = asyncHandler(async (req, res) => {
     }
 
     const user = await User.findById(userId)
+    console.log(user._id) //new ObjectId('672767ece080d6c5f2522c0b') same as from req.user._id or req.user.id
+    console.log(user.id) //672767ece080d6c5f2522c0b here importance of _id
+    console.log(userId)
 
     if (!user) {
         throw new ApiError(400, "Unauthorized request")
@@ -44,7 +47,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     const allTweets = await Tweet.aggregate([
         {
             $match: {
-                owner: user._id // how Q..
+                owner: user._id //new ObjectId('672767ece080d6c5f2522c0b') when user.id = 672767ece080d6c5f2522c0b If user._id is already an ObjectId (which it typically is when retrieved from Mongoose), you can use it directly in the $match stage without needing mongoose.Types.ObjectId(user._id).
             }
         },
         {
