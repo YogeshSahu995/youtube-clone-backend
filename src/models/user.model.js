@@ -1,4 +1,4 @@
-import {Schema, model} from "mongoose";
+import { Schema, model } from "mongoose";
 import jwt from "jsonwebtoken"
 import bcrypt from "bcrypt"
 
@@ -40,17 +40,17 @@ const userSchema = new Schema({
     },
     password: {
         type: String,
-        required:[true, "password is required"]
+        required: [true, "password is required"]
     },
     refreshToken: {
         type: String
     }
 
-}, {timestamps: true})
+}, { timestamps: true })
 
 // .pre("save") middleware(also hook) use to hash passwords, which is prefect for ensuring that passwords are never stored in plain text
-userSchema.pre("save", async function( next ) {
-    if(!this.isModified("password")) return next() //jab password modified nhi hoga to next() hoga
+userSchema.pre("save", async function (next) {
+    if (!this.isModified("password")) return next() //jab password modified nhi hoga to next() hoga
 
     this.password = await bcrypt.hash(this.password, 10)
     next()
@@ -59,17 +59,17 @@ userSchema.pre("save", async function( next ) {
 //isPasswordCorrect is good way to compare a password during authentication
 
 // this method is not access by User it's access by document which is in db
-userSchema.methods.isPasswordCorrect = async function (password){
+userSchema.methods.isPasswordCorrect = async function (password) {
     return await bcrypt.compare(password, this.password) // return true or false
 }
 
-userSchema.methods.generateAccessToken = function(){
-    return jwt.sign(    
+userSchema.methods.generateAccessToken = function () {
+    return jwt.sign(
         {
             _id: this._id, //Payload
             email: this.email,
             username: this.username,
-            fullname: this.fullname 
+            fullname: this.fullname
         },
         process.env.ACCESS_TOKEN_SECRET,// Secret key :- it"s used to sign JWT so the server can later varify the token
         {
@@ -77,7 +77,7 @@ userSchema.methods.generateAccessToken = function(){
         }
     )
 }
-userSchema.methods.generateRefreshToken = function(){
+userSchema.methods.generateRefreshToken = function () {
     return jwt.sign(
         {
             _id: this._id, //payload

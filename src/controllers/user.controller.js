@@ -36,7 +36,7 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(409, "User with email or username already exists")
     }
 
-    const avatarLocalPath = req.files?.avatar[0]?.path 
+    const avatarLocalPath = req.files?.avatar[0]?.path
 
     let coverImageLocalPath;
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
@@ -48,7 +48,7 @@ const registerUser = asyncHandler(async (req, res) => {
     }
 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath) 
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
     // when coverImageLocalPath is undefined so cloudinary never throw error
 
     if (!avatar) {
@@ -58,7 +58,7 @@ const registerUser = asyncHandler(async (req, res) => {
     const user = await User.create({
         fullname,
         avatar: avatar.url,
-        coverImage: coverImage?.url || "", 
+        coverImage: coverImage?.url || "",
         email,
         password,
         username: username.toLowerCase()
@@ -175,36 +175,36 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 })
 
 const changeCurrentPassword = asyncHandler(async (req, res) => {
-    const {oldPassword, newPassword, confirmPassword} = req.body
+    const { oldPassword, newPassword, confirmPassword } = req.body
     const user = await User.findById(req.user?._id)
     const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
 
-    if(!isPasswordCorrect){
+    if (!isPasswordCorrect) {
         throw new ApiError(400, "old password is Invalid")
     }
 
-    if(newPassword !== confirmPassword){
+    if (newPassword !== confirmPassword) {
         throw new ApiError(400, "confirm Password is incorrect")
     }
 
     user.password = newPassword,
 
-    await user.save({validateBeforeSave: false})
+        await user.save({ validateBeforeSave: false })
 
     return res.status(200)
-    .json(new ApiResponse(200, {}, "Password Changed successfully"))
+        .json(new ApiResponse(200, {}, "Password Changed successfully"))
 
 })
 
-const getCurrenctUser = asyncHandler(async(req, res) => {
+const getCurrenctUser = asyncHandler(async (req, res) => {
     return res.status(200)
-    .json(new ApiResponse(200, req.user, "current user fetched successfully"))
+        .json(new ApiResponse(200, req.user, "current user fetched successfully"))
 })
 
-const updateAccountDetails = asyncHandler(async(req, res) => {
-    const {fullname, email} = req.body
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    const { fullname, email } = req.body
 
-    if(!fullname || !email){
+    if (!fullname || !email) {
         throw new ApiError(400, "All fields are required")
     }
 
@@ -216,21 +216,21 @@ const updateAccountDetails = asyncHandler(async(req, res) => {
                 email
             }
         },
-        {new: true} //return after update
+        { new: true } //return after update
     ).select("-password")
 
     return res.status(200)
-    .json(new ApiResponse(200, user, "Successfully update user details"))
+        .json(new ApiResponse(200, user, "Successfully update user details"))
 })
 
-const updateUserAvatar = asyncHandler(async(req, res) => {
+const updateUserAvatar = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user?._id).select("-password -refreshToken")
 
     // remove prev image 
-    if(req.file?.path){
+    if (req.file?.path) {
         const prevImageUrl = user?.avatar
         const result = await removeOnCloudinary(prevImageUrl)
-        if(!result){
+        if (!result) {
             throw new ApiError(500, "Issue in removing image")
         }
     }
@@ -238,54 +238,54 @@ const updateUserAvatar = asyncHandler(async(req, res) => {
 
     //add another image
     const avatarLocalPath = req.file?.path
-    if(!avatarLocalPath){
+    if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is missing")
     }
     const avatar = await uploadOnCloudinary(avatarLocalPath)
-    if(!avatar.url){
+    if (!avatar.url) {
         throw new ApiError(500, "Error while uploading on avatar")
     }
     user.avatar = avatar.url
-    await user.save({validateBeforeSave: false})
+    await user.save({ validateBeforeSave: false })
 
     return res.status(200)
-    .json(new ApiResponse(200, user, "succesfully changed avatar" ))
+        .json(new ApiResponse(200, user, "succesfully changed avatar"))
 })
 
-const updateUserCoverImage = asyncHandler(async(req, res) => {
+const updateUserCoverImage = asyncHandler(async (req, res) => {
     const user = await User.findById(req.user?._id).select("-password -refreshToken")
 
     // remove prev image 
-    if(req.file?.path){
+    if (req.file?.path) {
         const prevImageUrl = user?.coverImage
         const result = await removeOnCloudinary(prevImageUrl)
-        if(!result){
+        if (!result) {
             throw new ApiError(500, "Issue in removing image")
-        }   
+        }
     }
 
     //add another image
     const coverImageLocalPath = req.file?.path
-    if(!coverImageLocalPath){
+    if (!coverImageLocalPath) {
         throw new ApiError(400, "Avatar file is missing")
     }
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
-    if(!coverImage.url){
+    if (!coverImage.url) {
         throw new ApiError(500, "Error while uploading on coverImage")
     }
     user.coverImage = coverImage.url
-    await user.save({validateBeforeSave: false})
+    await user.save({ validateBeforeSave: false })
 
     return res.status(200)
-    .json(new ApiResponse(200, user, "succesfully changed coverImage" ))
+        .json(new ApiResponse(200, user, "succesfully changed coverImage"))
 })
 
 //most imp controller
-const getUserChannelProfile = asyncHandler(async(req, res) => {
-    const {username} = req.params //search name
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params //search name
     // const username = req.params.username
 
-    if(!username?.trim()){
+    if (!username?.trim()) {
         throw new ApiError(400, "username is missing")
     }
 
@@ -321,8 +321,8 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
                 },
                 isSubscribed: {
                     $cond: {
-                        if: {$in: [req.user?._id, "$subscribers.subscriber"]},//Yes, exactly! In MongoDB's aggregation framework, you can access fields in nested arrays and objects directly using dot notation without needing to explicitly loop through the array. This feature is part of how MongoDB allows you to work with complex data structures efficiently.
-                        then: true, 
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },//Yes, exactly! In MongoDB's aggregation framework, you can access fields in nested arrays and objects directly using dot notation without needing to explicitly loop through the array. This feature is part of how MongoDB allows you to work with complex data structures efficiently.
+                        then: true,
                         else: false
                     }
                 }
@@ -342,15 +342,15 @@ const getUserChannelProfile = asyncHandler(async(req, res) => {
         }
     ])
 
-    if(!channel?.length){
+    if (!channel?.length) {
         throw new ApiError(404, "Channel does not exists")
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
+        .json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
 })
 
-const getWatchHistory = asyncHandler(async(req, res) => {
+const getWatchHistory = asyncHandler(async (req, res) => {
     // req.user._id // Interview :- ye string hi pass kerta hai mongodb objectId nhi kerta jab hum koi query use kerte hai to mongoose behind the seen string ko as ObjectId use kerta hai
     const user = await User.aggregate([
         {
@@ -396,16 +396,16 @@ const getWatchHistory = asyncHandler(async(req, res) => {
     //AGGREGATE A
 
     return res.status(200)
-    .json(new ApiResponse(200, user[0].watchHistory, "watch history fetched successfully"))
+        .json(new ApiResponse(200, user[0].watchHistory, "watch history fetched successfully"))
 })
 
 
-export { 
-    registerUser, 
-    loginUser, 
-    logoutUser, 
-    refreshAccessToken, 
-    changeCurrentPassword, 
+export {
+    registerUser,
+    loginUser,
+    logoutUser,
+    refreshAccessToken,
+    changeCurrentPassword,
     getCurrenctUser,
     updateAccountDetails,
     updateUserAvatar,

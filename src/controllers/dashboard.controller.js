@@ -1,5 +1,5 @@
-import {Video, Subscription, Like} from "../models/index.model.js"
-import {ApiError, ApiResponse, asyncHandler} from "../utils/index.js"
+import { Video, Subscription, Like } from "../models/index.model.js"
+import { ApiError, ApiResponse, asyncHandler } from "../utils/index.js"
 
 const getChannelStats = asyncHandler(async (req, res) => {
     const userId = req.user?._id
@@ -63,22 +63,22 @@ const getChannelStats = asyncHandler(async (req, res) => {
 
     const totalLikes = calculateLike[0]?.totalLikes || 0
 
-    const totalVideos = await Video.countDocuments({owner: userId})
+    const totalVideos = await Video.countDocuments({ owner: userId })
 
-    const totalSubscribers = await Subscription.countDocuments({channel: userId})
+    const totalSubscribers = await Subscription.countDocuments({ channel: userId })
 
-    const subscribedChannels = await Subscription.countDocuments({subscriber: userId})
+    const subscribedChannels = await Subscription.countDocuments({ subscriber: userId })
 
     return res.status(200)
-    .json(new ApiResponse(200, 
-        {totalSubscribers, subscribedChannels, totalViews, totalVideos, totalLikes},
-        "Successfully fetched a Info of channel"
-    ))
+        .json(new ApiResponse(200,
+            { totalSubscribers, subscribedChannels, totalViews, totalVideos, totalLikes },
+            "Successfully fetched a Info of channel"
+        ))
 })
 
 const getChannelVideos = asyncHandler(async (req, res) => {
     const userId = req.user?._id
-    
+
     const allVideos = await Video.aggregate([
         {
             $match: {
@@ -121,7 +121,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
                 createdAt: 1,
                 updatedAt: 1,
                 title: 1,
-                descirption:1,
+                descirption: 1,
                 likes: 1,
                 comment: 1,
                 views: 1
@@ -130,7 +130,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
     ])
 
     return res.status(200)
-    .json(new ApiResponse(200, allVideos, "Successfully fetch channel videos"))
+        .json(new ApiResponse(200, allVideos, "Successfully fetch channel videos"))
 })
 
-export {getChannelStats, getChannelVideos}
+export { getChannelStats, getChannelVideos }

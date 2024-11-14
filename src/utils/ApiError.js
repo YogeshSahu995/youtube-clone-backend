@@ -1,10 +1,10 @@
 class ApiError extends Error {
     constructor(
         statusCode,
-        message= "Something went wrong",
+        message = "Something went wrong",
         errors = [],
         stack = ""
-    ){
+    ) {
         super(message) //use super() inside a derived (child) class to access and initialize properties or methods from the base (parent) class
         // If a child class has its own constructor, it must call super() before it can access this.
         this.statusCode = statusCode
@@ -12,16 +12,16 @@ class ApiError extends Error {
         this.message = message
         this.success = false
         this.errors = errors
-        
-        if(stack){
+
+        if (stack) {
             this.stack = stack
-        }else{
+        } else {
             Error.captureStackTrace(this, this.constructor)
         }
     }
 }
 
-export {ApiError}
+export { ApiError }
 
 /* how use : -
 

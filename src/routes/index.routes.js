@@ -7,4 +7,4 @@ import likeRouter from "./like.routes.js"
 import dashboardRouter from "./dashboard.routes.js"
 import playlistRouter from "./playlist.routes.js"
 import healthcheckRouter from "./healthcheck.routes.js"
-export {userRouter, subscriptionRouter, tweetRouter, videoRouter, commentRouter, likeRouter, dashboardRouter, playlistRouter, healthcheckRouter}
+export { userRouter, subscriptionRouter, tweetRouter, videoRouter, commentRouter, likeRouter, dashboardRouter, playlistRouter, healthcheckRouter }

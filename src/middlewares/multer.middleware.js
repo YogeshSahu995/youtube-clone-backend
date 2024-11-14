@@ -2,16 +2,16 @@ import multer from "multer"
 
 const storage = multer.diskStorage(
     {
-        destination: function(req, file, cb){
+        destination: function (req, file, cb) {
             cb(null, "./public/temp")
         },
-        filename: function(req, file, cb){
+        filename: function (req, file, cb) {
             cb(null, file.originalname)
         }
     }
 )
 
-export const upload = multer({storage}) //es6 use :- {storage: storage} not any problem
+export const upload = multer({ storage }) //es6 use :- {storage: storage} not any problem
 /*
 Multer ka kaam yahi hai ki jo file upload ho rahi hai, us par zaroori rok-tok (restrictions) lagaye aur us file ka object route ke req (request) mein add kar de. Ye object us file ki details rakhta hai, jese:
 

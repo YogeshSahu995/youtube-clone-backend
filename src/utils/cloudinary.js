@@ -1,15 +1,15 @@
-import {v2 as cloudinary} from "cloudinary"
+import { v2 as cloudinary } from "cloudinary"
 import fs from "fs"
 
-cloudinary.config({ 
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-    api_key: process.env.CLOUDINARY_API_KEY, 
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
     api_secret: process.env.CLOUDINARY_API_SECRET // Click "View API Keys" above to copy your API secret
 });
 
 const uploadOnCloudinary = async (localFilePath) => {
     try {
-        if(!localFilePath) return null
+        if (!localFilePath) return null
         // upload the file on cloudinary
         const response = await cloudinary.uploader.upload(localFilePath, {
             resource_type: "auto"
@@ -26,9 +26,9 @@ const uploadOnCloudinary = async (localFilePath) => {
 
 const removeOnCloudinary = async (url) => {
     try {
-        if(!url) return true
+        if (!url) return true
         const urlParts = url.split('/')
-        const publicIdWithExtension = urlParts[urlParts.length-1]
+        const publicIdWithExtension = urlParts[urlParts.length - 1]
         const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "")
         const result = await cloudinary.uploader.destroy(publicId)
         return result
@@ -39,15 +39,15 @@ const removeOnCloudinary = async (url) => {
 
 const removeVideoOnCloudinary = async (videoUrl) => {
     try {
-        if(!videoUrl) return true
+        if (!videoUrl) return true
         const urlParts = videoUrl.split('/')
-        const publicIdWithExtension = urlParts[urlParts.length-1]
+        const publicIdWithExtension = urlParts[urlParts.length - 1]
         const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "")
-        const result = await cloudinary.uploader.destroy(publicId, {resource_type: 'video'})
+        const result = await cloudinary.uploader.destroy(publicId, { resource_type: 'video' })
         return result
     } catch (error) {
         return null
     }
 }
 
-export {uploadOnCloudinary, removeOnCloudinary, removeVideoOnCloudinary}
+export { uploadOnCloudinary, removeOnCloudinary, removeVideoOnCloudinary }

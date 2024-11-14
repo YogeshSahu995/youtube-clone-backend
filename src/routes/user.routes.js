@@ -6,48 +6,48 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 const router = Router()
 
 router.route("/register")
-.post(upload.fields([ //multer middleware : add fields in req object 
-      {
-            name: "avatar",
-            maxCount: 1
-      }, 
-      {
-            name: "coverImage",
-            maxCount: 1
-      }]), 
-registerUser)
+      .post(upload.fields([ //multer middleware : add fields in req object 
+            {
+                  name: "avatar",
+                  maxCount: 1
+            },
+            {
+                  name: "coverImage",
+                  maxCount: 1
+            }]),
+            registerUser)
 
 router.route("/login")
-.post(loginUser)
+      .post(loginUser)
 
 //secured routes
 router.route("/logout")
-.post(verifyJWT, logoutUser) // by verifyJWT insert object on req.user
+      .post(verifyJWT, logoutUser) // by verifyJWT insert object on req.user
 
 router.route("/refresh-token")
-.post(refreshAccessToken)
+      .post(refreshAccessToken)
 
 router.route("/change-password")
-.post(verifyJWT, changeCurrentPassword)
+      .post(verifyJWT, changeCurrentPassword)
 
 router.route("/current-user")
-.get(verifyJWT, getCurrenctUser)
+      .get(verifyJWT, getCurrenctUser)
 
 //PATCH only updates specific fields. This makes it efficient when you only want to change part of the data.
 router.route("/update-account")
-.patch(verifyJWT, updateAccountDetails)
+      .patch(verifyJWT, updateAccountDetails)
 
 router.route("/update-avatar")
-.patch(verifyJWT, upload.single("avatar"), updateUserAvatar)
+      .patch(verifyJWT, upload.single("avatar"), updateUserAvatar)
 
 router.route("/update-cover-image")
-.patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage)
+      .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage)
 
 router.route("/channel/:username")
-.get(verifyJWT, getUserChannelProfile)
+      .get(verifyJWT, getUserChannelProfile)
 
 router.route("/watch-history")
-.get(verifyJWT, getWatchHistory)
+      .get(verifyJWT, getWatchHistory)
 
 export default router
 

@@ -29,9 +29,9 @@ const createTweet = asyncHandler(async (req, res) => {
 })
 
 const getUserTweets = asyncHandler(async (req, res) => {
-    const {userId} = req.params
+    const { userId } = req.params
 
-    if(!isValidObjectId(userId)){
+    if (!isValidObjectId(userId)) {
         throw new ApiError(400, "unauthorized request")
     }
 
@@ -113,7 +113,7 @@ const updateTweets = asyncHandler(async (req, res) => {
                 content
             }
         },
-        {new: true}
+        { new: true }
     )
 
     if (!updatedTweet) {

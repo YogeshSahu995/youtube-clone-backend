@@ -7,10 +7,10 @@ const router = Router()
 router.use(verifyJWT)
 
 router.route("/c/:channelId")
-.get(getUserChannelSubscribers)
-.post(toggleSubscription)
+    .get(getUserChannelSubscribers)
+    .post(toggleSubscription)
 
 router.route("/u/:subscriberId")
-.get(getSubscribedChannels)
+    .get(getSubscribedChannels)
 
 export default router

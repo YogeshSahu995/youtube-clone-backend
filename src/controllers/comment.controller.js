@@ -1,26 +1,26 @@
-import {Comment} from "../models/comment.model.js"
+import { Comment } from "../models/comment.model.js"
 import { asyncHandler, ApiError, ApiResponse } from "../utils/index.js"
-import mongoose, {isValidObjectId} from "mongoose"
+import mongoose, { isValidObjectId } from "mongoose"
 
 //manually pagination
-const getVideoComments = asyncHandler(async(req, res) => {
-    const {videoId} = req.params
+const getVideoComments = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
     const limit = parseInt(req.query?.limit || 10)
     const page = parseInt(req.query?.page || 1)
 
-    if(!isValidObjectId(videoId)){
+    if (!isValidObjectId(videoId)) {
         throw new ApiError(400, "Video Id is invalid")
     }
 
     const aggregateOfComment = await Comment.aggregate([
         {
             $match: {
-                video : new mongoose.Types.ObjectId(videoId),
+                video: new mongoose.Types.ObjectId(videoId),
             }
         },
         {
             $lookup: {
-                from: "users",  
+                from: "users",
                 localField: "owner",
                 foreignField: "_id",
                 as: "owner",
@@ -50,7 +50,7 @@ const getVideoComments = asyncHandler(async(req, res) => {
             }
         },
         {
-            $skip: (page-1)*limit
+            $skip: (page - 1) * limit
         },
         {
             $limit: limit
@@ -59,28 +59,28 @@ const getVideoComments = asyncHandler(async(req, res) => {
 
     console.log(aggregateOfComment)
 
-    const totalComments = await Comment.countDocuments({video: videoId})
+    const totalComments = await Comment.countDocuments({ video: videoId })
 
     const paginatedComment = {
         docs: aggregateOfComment,
         totalDocs: totalComments,
-        limit, 
+        limit,
         page,
-        totalPages: Math.ceil(totalComments/limit)
+        totalPages: Math.ceil(totalComments / limit)
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, paginatedComment, "Successfully get all comments"))
+        .json(new ApiResponse(200, paginatedComment, "Successfully get all comments"))
 })
 
-const addComment = asyncHandler(async(req, res) => {
+const addComment = asyncHandler(async (req, res) => {
     const userId = req.user?._id // do not give _id
-    const {videoId} = req.params
-    const {content} = req.body
+    const { videoId } = req.params
+    const { content } = req.body
 
     console.log(userId) // see:- todo
 
-    if(!isValidObjectId(videoId)){
+    if (!isValidObjectId(videoId)) {
         throw new ApiError(400, "Video id is invalid")
     }
 
@@ -90,22 +90,22 @@ const addComment = asyncHandler(async(req, res) => {
         owner: userId,
     })
 
-    if(!createdComment){
+    if (!createdComment) {
         throw new ApiError(500, "Any Issue in commenting on video")
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, createdComment, "Successfully do comment on video"))
+        .json(new ApiResponse(200, createdComment, "Successfully do comment on video"))
 })
 
-const updateComment = asyncHandler(async(req, res) => {
+const updateComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params
-    const {content} = req.body
+    const { content } = req.body
     const userId = req.user?._id
 
     console.log(userId)
 
-    if(!isValidObjectId(commentId)){
+    if (!isValidObjectId(commentId)) {
         throw new ApiError(400, "comment Id is Invalid")
     }
 
@@ -123,14 +123,14 @@ const updateComment = asyncHandler(async(req, res) => {
 
     */
 
-    if(!comment.owner.equals(userId)){
+    if (!comment.owner.equals(userId)) {
         throw new ApiError(401, "Unauthorized request : current user is not owner of comment")
     }
 
-    if(!content){
+    if (!content) {
         throw new ApiError(400, "Content is required")
     }
-    
+
     const updatedComment = await Comment.findByIdAndUpdate(
         commentId,
         {
@@ -143,36 +143,36 @@ const updateComment = asyncHandler(async(req, res) => {
         }
     )
 
-    if(!updatedComment){
+    if (!updatedComment) {
         throw new ApiError(500, "Any Issue in updating a comment")
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, updatedComment, "Successfully update a comment"))
+        .json(new ApiResponse(200, updatedComment, "Successfully update a comment"))
 })
 
-const deleteComment = asyncHandler(async(req, res) => {
+const deleteComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params
     const userId = req.user?._id // id give string only
 
-    if(!isValidObjectId(commentId)){
+    if (!isValidObjectId(commentId)) {
         throw new ApiError(400, "comment Id is Invalid")
     }
 
     const comment = await Comment.findById(commentId)
-    
-    if(!comment.owner.equals(userId)){
+
+    if (!comment.owner.equals(userId)) {
         throw new ApiError(401, "Unauthorized request : current user is not owner of comment")
     }
 
     const deletedComment = await Comment.findByIdAndDelete(commentId)
 
-    if(!deletedComment){
+    if (!deletedComment) {
         throw new ApiError(500, "Issue in delete a comment")
     }
 
     res.status(200)
-    .json(new ApiResponse(200, deletedComment, "Successfully deleted a comment"))
+        .json(new ApiResponse(200, deletedComment, "Successfully deleted a comment"))
 })
 
 export { getVideoComments, addComment, updateComment, deleteComment }

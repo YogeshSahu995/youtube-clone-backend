@@ -1,34 +1,34 @@
-import {Like, Video, Comment, Tweet} from "../models/index.model.js"
-import {asyncHandler, ApiResponse, ApiError} from "../utils/index.js"
-import mongoose, {isValidObjectId} from "mongoose"
+import { Like, Video, Comment, Tweet } from "../models/index.model.js"
+import { asyncHandler, ApiResponse, ApiError } from "../utils/index.js"
+import mongoose, { isValidObjectId } from "mongoose"
 
-const toggleVideoLike = asyncHandler(async(req, res) => {
-    const {videoId} = req.params
+const toggleVideoLike = asyncHandler(async (req, res) => {
+    const { videoId } = req.params
     const userId = req.user?._id
 
-    if(!isValidObjectId(videoId)){
+    if (!isValidObjectId(videoId)) {
         throw new ApiError(400, `Is not a valid video Id ${videoId}`)
     }
 
     const videoExist = await Video.findById(videoId)
 
-    if(!videoExist){
+    if (!videoExist) {
         throw new ApiError(400, "Error: Video is not exist (find by videoId)")
     }
 
     const alreadyLiked = await Like.findOne({
         $and: [
-            {video: videoId},
-            {likedBy: userId}
+            { video: videoId },
+            { likedBy: userId }
         ]
     })
 
-    if(alreadyLiked){
+    if (alreadyLiked) {
         const disableLike = await Like.findByIdAndDelete(alreadyLiked?._id)
 
-        if(disableLike){
+        if (disableLike) {
             return res.status(200)
-            .json(new ApiResponse(200, false, "Successfully unlike a video"))
+                .json(new ApiResponse(200, false, "Successfully unlike a video"))
         }
     }
 
@@ -37,41 +37,41 @@ const toggleVideoLike = asyncHandler(async(req, res) => {
         likedBy: userId
     })
 
-    if(!likeAVideo){
+    if (!likeAVideo) {
         throw new ApiError(500, "Any problem in likeing a video")
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, true, "Successfully Like a video"))
+        .json(new ApiResponse(200, true, "Successfully Like a video"))
 })
 
-const toggleCommentLike = asyncHandler(asyncHandler(async(req, res) => {
+const toggleCommentLike = asyncHandler(asyncHandler(async (req, res) => {
     const userId = req.user?._id
-    const {commentId} = req.params
+    const { commentId } = req.params
 
-    if(!isValidObjectId(commentId)){
+    if (!isValidObjectId(commentId)) {
         throw new ApiError(400, `Is not a valid comment Id ${commentId}`)
     }
 
     const commentExist = await Comment.findById(commentId)
-    
-    if(!commentExist){
+
+    if (!commentExist) {
         throw new ApiError(400, "Comment is not exist (findBy commentId)")
     }
 
     const alreadyLiked = await Like.findOne({
         $and: [
-            {likedBy: userId},
-            {comment: commentId}
+            { likedBy: userId },
+            { comment: commentId }
         ]
     })
 
-    if(alreadyLiked){
+    if (alreadyLiked) {
         const disableLike = await Like.findByIdAndDelete(alreadyLiked?._id)
 
-        if(disableLike){
+        if (disableLike) {
             return res.status(200)
-            .json(new ApiResponse(200, false, "Successfully unlike a comment"))
+                .json(new ApiResponse(200, false, "Successfully unlike a comment"))
         }
     }
 
@@ -80,41 +80,41 @@ const toggleCommentLike = asyncHandler(asyncHandler(async(req, res) => {
         likedBy: userId
     })
 
-    if(!likeAComment){
+    if (!likeAComment) {
         throw new ApiError(500, "Any problem in like a comment")
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, true, "Successfully like a comment"))
+        .json(new ApiResponse(200, true, "Successfully like a comment"))
 }))
 
-const toggleTweetLike = asyncHandler(async(req, res) => {
+const toggleTweetLike = asyncHandler(async (req, res) => {
     const userId = req.user?._id
-    const {tweetId} = req.params
+    const { tweetId } = req.params
 
-    if(!isValidObjectId(tweetId)){
-    throw new ApiError(400, `Is not a valid tweet Id ${tweetId}`)
+    if (!isValidObjectId(tweetId)) {
+        throw new ApiError(400, `Is not a valid tweet Id ${tweetId}`)
     }
 
     const tweetExist = await Tweet.findById(tweetId)
-    
-    if(!tweetExist){
+
+    if (!tweetExist) {
         throw new ApiError(400, "Tweet is not exist (findBy tweetId)")
     }
 
     const alreadyLiked = await Like.findOne({
         $and: [
-            {likedBy: userId},
-            {tweet: tweetId}
+            { likedBy: userId },
+            { tweet: tweetId }
         ]
     })
 
-    if(alreadyLiked){
+    if (alreadyLiked) {
         const disableLike = await Like.findByIdAndDelete(alreadyLiked?._id)
 
-        if(disableLike){
+        if (disableLike) {
             return res.status(200)
-            .json(new ApiResponse(200, false, "Successfully unlike a tweet"))
+                .json(new ApiResponse(200, false, "Successfully unlike a tweet"))
         }
     }
 
@@ -123,24 +123,24 @@ const toggleTweetLike = asyncHandler(async(req, res) => {
         likedBy: userId
     })
 
-    if(!likeATweet){
+    if (!likeATweet) {
         throw new ApiError(500, "Any problem in like a tweet")
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, true, "Successfully like a tweet"))
+        .json(new ApiResponse(200, true, "Successfully like a tweet"))
 })
 
-const getLikedVideos = asyncHandler(async(req, res) => {
+const getLikedVideos = asyncHandler(async (req, res) => {
     const userId = req.user?._id
 
     const likedVideos = await Like.aggregate([
         {
             $match: {
                 likedBy: userId,
-                video: {$exists: true},
-                tweet: {$exists: false},
-                comment: {$exists: false}
+                video: { $exists: true },
+                tweet: { $exists: false },
+                comment: { $exists: false }
             }
         },
         {
@@ -151,8 +151,8 @@ const getLikedVideos = asyncHandler(async(req, res) => {
                 as: "video",
                 pipeline: [
                     {
-                        $lookup:{
-                            from : "users",
+                        $lookup: {
+                            from: "users",
                             localField: "owner",
                             foreignField: "_id",
                             as: "owner",
@@ -196,7 +196,7 @@ const getLikedVideos = asyncHandler(async(req, res) => {
     console.log(likedVideos)
 
     return res.status(200)
-    .json(new ApiResponse(200, likedVideos, "Successfully Fetched all liked videos"))
+        .json(new ApiResponse(200, likedVideos, "Successfully Fetched all liked videos"))
 })
 
-export {toggleVideoLike, toggleCommentLike, toggleTweetLike, getLikedVideos}
+export { toggleVideoLike, toggleCommentLike, toggleTweetLike, getLikedVideos }

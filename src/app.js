@@ -9,18 +9,18 @@ app.use(cors({
     credentials: true
 }))
 
-app.use(express.json({limit: "16kb"})) //form data 
-app.use(express.urlencoded({extended: true, limit: "16kb" })) //yogesh%20kumar to yogesh kumar & extended usefull for nested object 
+app.use(express.json({ limit: "16kb" })) //form data 
+app.use(express.urlencoded({ extended: true, limit: "16kb" })) //yogesh%20kumar to yogesh kumar & extended usefull for nested object 
 app.use(express.static("public"))
 app.use(cookieParser()) //
 
 
 //routes import 
-import { 
-    userRouter, 
-    subscriptionRouter, 
-    tweetRouter, 
-    videoRouter, 
+import {
+    userRouter,
+    subscriptionRouter,
+    tweetRouter,
+    videoRouter,
     commentRouter,
     likeRouter,
     dashboardRouter,
@@ -29,7 +29,7 @@ import {
 } from "./routes/index.routes.js"
 
 //routes declaration
-app.use("/api/v1/users", userRouter) 
+app.use("/api/v1/users", userRouter)
 app.use("/api/v1/subscriptions", subscriptionRouter)
 app.use("/api/v1/tweets", tweetRouter)
 app.use("/api/v1/videos", videoRouter)
@@ -44,4 +44,4 @@ http://localhost:8000/api/v1/users/register
 */
 
 
-export {app} 
+export { app } 

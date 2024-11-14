@@ -1,12 +1,12 @@
-import {Router} from "express";
-import { 
-    createPlaylist, 
-    getUserPlaylists, 
-    getPlaylistById, 
-    addVideoToPlaylist, 
-    removeVideoFromPlaylist, 
-    deletePlaylist, 
-    updatePlaylist 
+import { Router } from "express";
+import {
+    createPlaylist,
+    getUserPlaylists,
+    getPlaylistById,
+    addVideoToPlaylist,
+    removeVideoFromPlaylist,
+    deletePlaylist,
+    updatePlaylist
 } from "../controllers/playlist.controller.js"
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -16,20 +16,20 @@ const router = Router()
 router.use(verifyJWT)
 
 router.route("/")
-.post(createPlaylist)
+    .post(createPlaylist)
 
 router.route("/:playlistId")
-.get(getPlaylistById)
-.delete(deletePlaylist)
-.patch(updatePlaylist)
+    .get(getPlaylistById)
+    .delete(deletePlaylist)
+    .patch(updatePlaylist)
 
 router.route("/add/:videoId/:playlistId")
-.patch(addVideoToPlaylist)
+    .patch(addVideoToPlaylist)
 
 router.route("/remove/:videoId/:playlistId")
-.patch(removeVideoFromPlaylist)
+    .patch(removeVideoFromPlaylist)
 
 router.route("/user/:userId")
-.get(getUserPlaylists)
+    .get(getUserPlaylists)
 
 export default router
