@@ -5,4 +5,5 @@ import videoRouter from "./video.routes.js"
 import commentRouter from "./comment.routes.js"
 import likeRouter from "./like.routes.js"
 import dashboardRouter from "./dashboard.routes.js"
-export {userRouter, subscriptionRouter, tweetRouter, videoRouter, commentRouter, likeRouter, dashboardRouter}
+import playlistRouter from "./playlist.routes.js"
+export {userRouter, subscriptionRouter, tweetRouter, videoRouter, commentRouter, likeRouter, dashboardRouter, playlistRouter}
