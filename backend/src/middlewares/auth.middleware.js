@@ -6,7 +6,7 @@ import { User } from "../models/user.model.js"
 
 // give current user details by accessToken
 export const verifyJWT = asyncHandler(async (req, res, next) => {
-    //sir use try catch here...
+    //req.cookie come by cookie-parser
     const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
 
     if (!token) {

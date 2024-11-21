@@ -38,6 +38,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const avatarLocalPath = req.files?.avatar[0]?.path
 
+    console.log(avatarLocalPath)
+
     let coverImageLocalPath;
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files.coverImage[0].path
@@ -101,10 +103,9 @@ const loginUser = asyncHandler(async (req, res) => {
 
     const user = await User.findById(userDetails._id).select("-password -refreshToken")
 
-
     // cookie was modiefied by frontend so secure region and modified by only server:- options
     const options = {
-        httpOnly: true,
+        httpOnly: true, // it's protect from clientSide javascript from accessed it 
         secure: true,
     }
 
@@ -128,8 +129,8 @@ const logoutUser = asyncHandler(async (req, res) => {
     )
 
     const options = {
-        httpOnly: true,
-        secure: true,
+        httpOnly: true, // javascript ma accessible nhi hoga
+        secure: true, // agar ye true kerte hai cookie sirf https connection per send hogi only
     }
 
     return res.status(200)
@@ -154,8 +155,9 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new ApiError(401, "Invalid Refresh Token")
         }
 
+        // when user logout so refreshtoken == 1; like insta
         if (incomingRefreshToken !== user?.refreshToken) {
-            throw new ApiError(401, "Refresh token is expired or user")
+            throw new ApiError(401, "Refresh token is expired or used")
         }
 
         const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id)
@@ -204,12 +206,12 @@ const getCurrenctUser = asyncHandler(async (req, res) => {
 const updateAccountDetails = asyncHandler(async (req, res) => {
     const { fullname, email } = req.body
 
-    if (!fullname || !email) {
+    if (!(fullname && email)) {
         throw new ApiError(400, "All fields are required")
     }
 
     const user = await User.findByIdAndUpdate(
-        req.user?.id,
+        req.user?._id,
         {
             $set: {
                 fullname,
@@ -285,7 +287,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
     const { username } = req.params //search name
     // const username = req.params.username
 
-    if (!username?.trim()) {
+    if (!username.trim()) {
         throw new ApiError(400, "username is missing")
     }
 

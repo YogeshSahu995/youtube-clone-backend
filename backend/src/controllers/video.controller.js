@@ -219,4 +219,39 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, video, "successfully toggled!"))
 })
 
-export { publishAVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus, getAllVideos }
+const addVideoInHistory = asyncHandler(async(req, res) => {
+    const userId = req.user?._id
+    const {videoId} = req.params
+
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400, "VideoId is invalid")
+    }
+
+    const video = await Video.findById(videoId)
+
+    if(!video){
+        throw new ApiError(400, "Videos is not exist")
+    }
+
+    const history = await User.findByIdAndUpdate(
+        userId,
+        {
+            $push: {
+                watchHistory: {_id: videoId}
+            }
+        },
+        {
+            new: true
+        }
+    )
+
+    if(!history) {
+        throw new ApiError(500, "Any problem to store in history")
+    }
+
+    return res.status(200)
+    .json(new ApiResponse(200, history, "Successfully add in history"))
+})
+
+
+export { publishAVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus, getAllVideos, addVideoInHistory }

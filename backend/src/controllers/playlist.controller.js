@@ -15,7 +15,7 @@ const createPlaylist = asyncHandler(async (req, res) => {
     const userId = req.user?._id
 
     const createdPlaylist = await Playlist.create({
-        name,
+        name: name.toLowerCase(),
         description,
         owner: userId,
     })

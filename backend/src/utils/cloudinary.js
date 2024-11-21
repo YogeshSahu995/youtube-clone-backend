@@ -29,7 +29,7 @@ const removeOnCloudinary = async (url) => {
         if (!url) return true
         const urlParts = url.split('/')
         const publicIdWithExtension = urlParts[urlParts.length - 1]
-        const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "")
+        const publicId = publicIdWithExtension.replace(/\.[^/.]+$/, "") // remove extension (.jpg)
         const result = await cloudinary.uploader.destroy(publicId)
         return result
     } catch (error) {

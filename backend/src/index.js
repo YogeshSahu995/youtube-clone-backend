@@ -6,6 +6,7 @@ connectDB()
     .then(() => {
         app.on("error", (error) => {
             console.log(`ERR: ${error}`)
+            throw error
         })
 
         const port = process.env.PORT || 8000
