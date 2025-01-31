@@ -1,8 +1,13 @@
+import mongoose, { isValidObjectId } from "mongoose"
 import { Video, Subscription, Like } from "../models/index.model.js"
 import { ApiError, ApiResponse, asyncHandler } from "../utils/index.js"
 
 const getChannelStats = asyncHandler(async (req, res) => {
-    const userId = req.user?._id
+    const {userId} = req.params
+
+    if(!isValidObjectId(userId)){
+        return new ApiError(400, "UserId is not valid")
+    }
 
     const calculateView = await Video.aggregate([
         {
@@ -77,12 +82,16 @@ const getChannelStats = asyncHandler(async (req, res) => {
 })
 
 const getChannelVideos = asyncHandler(async (req, res) => {
-    const userId = req.user?._id
+    const {userId} = req.params
+
+    if(!isValidObjectId(userId)){
+        throw new ApiError(400, "UserId is not valid")
+    }
 
     const allVideos = await Video.aggregate([
         {
             $match: {
-                owner: userId
+                owner: new mongoose.Types.ObjectId(userId)
             }
         },
         {
@@ -121,9 +130,9 @@ const getChannelVideos = asyncHandler(async (req, res) => {
                 createdAt: 1,
                 updatedAt: 1,
                 title: 1,
-                descirption: 1,
+                description: 1,
                 likes: 1,
-                comment: 1,
+                comments: 1,
                 views: 1
             }
         }

@@ -3,44 +3,305 @@ import { Video } from "../models/video.model.js"
 import { User } from "../models/user.model.js"
 import mongoose, { isValidObjectId } from "mongoose"
 
-const getAllVideos = asyncHandler(async (req, res) => {
-    const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query
+const getVideosByTitle = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, query, sortBy = "createdAt", sortType = "des" } = req.query;
 
-    if (!isValidObjectId(userId)) {
-        throw new ApiError(400, "user id is invalid")
-    }
+    const pageNumber = Math.max(1, parseInt(page));
+    const limitNumber = Math.max(1, parseInt(limit));
 
-    const aggregate = await Video.aggregate([
+    const pipeline = [
         {
             $match: {
-                $and: [
-                    query ? { title: { $regex: query, $options: "i" } } : {},
-                    userId ? { owner: userId } : {}
+                ...(query ? { title: { $regex: query, $options: 'i' } } : {})
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                    {
+                        $project: {
+                            avatar: 1,
+                            username: 1,
+                            email: 1,
+                            fullname: 1
+                        }
+                    }
                 ]
+            }
+        },
+        {
+            $unwind: "$owner"
+        },
+        {
+            $project: {
+                thumbnail: 1,
+                title: 1,
+                description: 1,
+                duration: 1,
+                views: 1,
+                isPublished: 1,
+                owner: 1,
+                createdAt: 1,
+                updatedAt: 1,
             }
         },
         {
             $sort: {
                 [sortBy]: sortType === "asc" ? 1 : -1
-                //sortBy means it's hold the field you want to sortBy(createdAt, views, title)
-                // When we put sortBy in square brackets, it means we’re using the value of sortBy as the actual field name in the $sort object.
             }
         }
-    ])
+    ];
+
 
     const options = {
-        page: parseInt(page),
-        limit: parseInt(limit)
+        page: pageNumber,
+        limit: limitNumber
+    };
+
+    const allVideos = await Video.aggregatePaginate(pipeline, options);
+
+    if (allVideos) {
+        return res.status(200).json(
+            new ApiResponse(200, allVideos, "All Videos fetched by title")
+        );
     }
 
-    const allVideos = await Video.aggregatePaginate(aggregate, options)
 
-    return res.status(200)
-        .json(new ApiResponse(200, allVideos, "Successfully fetched all videos"))
+    return res.status(500).json(
+        new ApiResponse(500, allVideos, "Error fetching videos", error.message)
+    );
+});
+
+const getChannelVideos = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, query, sortBy = "views", sortType = "asc" } = req.query;
+
+    if (!isValidObjectId(query)) {
+        throw new ApiError(400, "userId is not valid id")
+    }
+
+    const pageNumber = Math.max(1, parseInt(page));
+    const limitNumber = Math.max(1, parseInt(limit));
+
+    const pipeline = [
+        {
+            $match: {
+                owner: new mongoose.Types.ObjectId(query)
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                    {
+                        $project: {
+                            avatar: 1,
+                            username: 1,
+                            email: 1,
+                            fullname: 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "video",
+                as: "like"
+            }
+        },
+        {
+            $addFields: {
+                likes: {
+                    $size: "$like"
+                }
+            }
+        },
+        {
+            $addFields: {
+                views: {
+                    $cond: {
+                        if: { $isArray: "$views" },
+                        then: { $size: "$views" },
+                        else: 0
+                    }
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "comments",
+                localField: "_id",
+                foreignField: "video",
+                as: "comment"
+            }
+        },
+        {
+            $addFields: {
+                comments: {
+                    $size: "$comment"
+                }
+            }
+        },
+        {
+            $addFields: {
+                owner: {
+                    $first: "$owner"
+                }
+            }
+        },
+        {
+            $project: {
+                thumbnail: 1,
+                title: 1,
+                description: 1,
+                duration: 1,
+                views: 1,
+                likes: 1,
+                comments: 1,
+                isPublished: 1,
+                owner: 1,
+                createdAt: 1,
+                updatedAt: 1,
+            }
+        },
+        {
+            $sort: {
+                [sortBy]: sortType === "asc" ? 1 : -1,
+                _id: 1, // agar field uniform hai, _id ensure karega ki documents unique aur repeat na ho
+            }
+        }
+    ];
+
+
+    // Use aggregatePaginate for pagination
+    const options = {
+        page: pageNumber,
+        limit: limitNumber
+    };
+
+    try {
+        const allVideos = await Video.aggregatePaginate(Video.aggregate(pipeline), options);
+
+        return res.status(200).json(
+            new ApiResponse(200, allVideos, "All Videos fetched by userId")
+        );
+    } catch (error) {
+        return res.status(500).json(
+            new ApiResponse(500, null, "Error fetching videos", error.message)
+        );
+    }
+
 })
 
+const getSeachVideosOfChannel = asyncHandler(async (req, res) => {
+    const { page = 1, limit = 10, query, sortBy = "createdAt", sortType = "desc", userId } = req.query;
+
+    if (userId && !isValidObjectId(userId)) {
+        throw new ApiError(400, "User ID is invalid");
+    }
+
+    const pipeline = [
+        {
+            $match: {
+                ...(userId ? { owner: new mongoose.Types.ObjectId(userId) } : {}),
+                ...(query ? { title: { $regex: query, $options: "i" } } : {})
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                    {
+                        $project: {
+                            avatar: 1,
+                            username: 1,
+                            email: 1,
+                            fullname: 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "video",
+                as: "like"
+            }
+        },
+        {
+            $lookup: {
+                from: "comments",
+                localField: "_id",
+                foreignField: "video",
+                as: "comment"
+            }
+        },
+        {
+            $addFields: {
+                likes: { $size: "$like" },
+                comments: { $size: "$comment" },
+                views: {
+                    $cond: { if: { $isArray: "$views" }, then: { $size: "$views" }, else: 0 }
+                },
+                owner: { $first: "$owner" }
+            }
+        },
+        {
+            $project: {
+                thumbnail: 1,
+                title: 1,
+                description: 1,
+                duration: 1,
+                views: 1,
+                likes: 1,
+                comments: 1,
+                isPublished: 1,
+                owner: 1,
+                createdAt: 1,
+                updatedAt: 1
+            }
+        },
+        {
+            $sort: {
+                [sortBy]: sortType === "asc" ? 1 : -1
+            }
+        }
+    ];
+
+    const options = {
+        page: Math.max(1, parseInt(page)),
+        limit: Math.max(1, parseInt(limit))
+    };
+
+    try {
+        const allVideos = await Video.aggregatePaginate(Video.aggregate(pipeline), options);
+
+        if (allVideos.docs.length === 0) {
+            return res.status(200).json(new ApiResponse(200, null, "No videos found"));
+        }
+
+        return res.status(200).json(new ApiResponse(200, allVideos, "All videos fetched successfully"));
+    } catch (error) {
+        throw new ApiError(500, `Error fetching videos ${error.message} `)
+    }
+});
+
 const publishAVideo = asyncHandler(async (req, res) => {
-    const { title, description } = req.body
+    const { title, description, isPublished } = req.body
     const fileLocalPath = req.files?.thumbnail[0]?.path
     const videoLocalPath = req.files?.videoFile[0]?.path
     const userID = req.user?._id
@@ -59,11 +320,11 @@ const publishAVideo = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Video is required")
     }
 
-    const thumbnail = await uploadOnCloudinary(fileLocalPath)
-    const video = await uploadOnCloudinary(videoLocalPath)
+    const thumbnail = await uploadOnCloudinary(fileLocalPath, "image")
+    const video = await uploadOnCloudinary(videoLocalPath, "video")
 
     if (!(thumbnail && video)) {
-        throw new ApiError("Problem in uploading!")
+        throw new ApiError(400, "thumbnail and video is required")
     }
 
     const publishedVideo = await Video.create(
@@ -74,6 +335,7 @@ const publishAVideo = asyncHandler(async (req, res) => {
             description,
             duration: video.duration,
             owner: userID,
+            isPublished,
         }
     )
 
@@ -106,18 +368,108 @@ const getVideoById = asyncHandler(async (req, res) => {
                 as: "owner",
                 pipeline: [
                     {
+                        $lookup: {
+                            from: "subscriptions",
+                            localField: "_id",
+                            foreignField: "channel",
+                            as: "subscribers"
+                        }
+                    },
+                    {
+                        $addFields: {
+                            subscribersCount: {
+                                $size: "$subscribers"
+                            },
+                            isSubscribed: {
+                                $cond: {
+                                    if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+                                    then: true,
+                                    else: false
+                                }
+                            },
+                        }
+                    },
+                    {
                         $project: {
                             _id: 1,
+                            fullname: 1,
                             username: 1,
                             avatar: 1,
+                            isSubscribed: 1,
+                            subscribersCount: 1,
                         }
                     }
                 ]
             }
         },
         {
+            $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "video",
+                as: "likes"
+            }
+        },
+        {
+            $addFields: {
+                likes: {
+                    $size: "$likes"
+                },
+                isLiked: {
+                    $cond: {
+                        if: { $in: [req.user?._id, "$likes.likedBy"] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+        {
+            $addFields: {
+                views: {
+                    $cond: {
+                        if: { $isArray: "$views" },
+                        then: { $size: "$views" },
+                        else: 0
+                    }
+                }
+            }
+        },
+        {
+            $lookup: {
+                from: "comments",
+                localField: "_id",
+                foreignField: "video",
+                as: "comment"
+            }
+        },
+        {
+            $addFields: {
+                comments: {
+                    $size: "$comment"
+                }
+            }
+        },
+        {
             $unwind: "$owner"
-        }
+        },
+        {
+            $project: {
+                thumbnail: 1,
+                videoFile: 1,
+                title: 1,
+                description: 1,
+                duration: 1,
+                views: 1,
+                likes: 1,
+                isLiked: 1,
+                comments: 1,
+                isPublished: 1,
+                owner: 1,
+                createdAt: 1,
+                updatedAt: 1,
+            }
+        },
     ])
 
     console.log(video)
@@ -132,9 +484,19 @@ const getVideoById = asyncHandler(async (req, res) => {
 
 const updateVideo = asyncHandler(async (req, res) => {
     const { videoId } = req.params
+    const { title, description, isPublished } = req.body
+    const thumbnailLocalPath = req.file?.path
 
     if (!isValidObjectId(videoId)) {
         throw new ApiError("Video Id is Invalid")
+    }
+
+    if (!(title && description)) {
+        throw new ApiError("title or description is required")
+    }
+
+    if (!thumbnailLocalPath) {
+        throw new ApiError(400, "Thumbnail is required")
     }
 
     const getVideo = await Video.findById(videoId)
@@ -147,13 +509,8 @@ const updateVideo = asyncHandler(async (req, res) => {
         }
     }
 
-    const thumbnailLocalPath = req.file?.path
 
-    if (!thumbnailLocalPath) {
-        throw new ApiError(400, "Thumbnail is required")
-    }
-
-    const thumbnail = await uploadOnCloudinary(thumbnailLocalPath)
+    const thumbnail = await uploadOnCloudinary(thumbnailLocalPath, "image")
 
     if (!thumbnail?.url) {
         throw new ApiError(500, "Issue in uploading video")
@@ -163,7 +520,10 @@ const updateVideo = asyncHandler(async (req, res) => {
         videoId,
         {
             $set: {
-                thumbnail: thumbnail?.url
+                thumbnail: thumbnail?.url,
+                title: title,
+                description: description,
+                isPublished: isPublished,
             },
         },
         { new: true }
@@ -219,39 +579,89 @@ const togglePublishStatus = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, video, "successfully toggled!"))
 })
 
-const addVideoInHistory = asyncHandler(async(req, res) => {
-    const userId = req.user?._id
-    const {videoId} = req.params
+const handleVideoViews = asyncHandler(async (req, res) => {
+    const { videoId, userId } = req.params;
 
-    if(!isValidObjectId(videoId)){
+    // Validate ObjectIds
+    if (!mongoose.isValidObjectId(videoId)) {
+        return res.status(400).json({ message: "Invalid videoId" });
+    }
+    if (!mongoose.isValidObjectId(userId)) {
+        return res.status(400).json({ message: "Invalid userId" });
+    }
+
+    // Ensure the video exists
+    const video = await Video.findById(videoId);
+    if (!video.views) video.views = []
+    console.log(video)
+    if (!video) {
+        throw new ApiError(404, "Video is not found");
+    }
+
+    // Add userId to views if not already present
+    if (!video?.views?.includes(userId)) {
+        video.views.push(userId);
+        await video.save();
+    }
+    else {
+        return
+    }
+
+    return res.status(200).json(new ApiResponse(200, video, "Successful"));
+});
+
+const addVideoInHistory = asyncHandler(async (req, res) => {
+    const userId = req.user?._id
+    const { videoId } = req.params
+
+    if (!isValidObjectId(videoId)) {
         throw new ApiError(400, "VideoId is invalid")
     }
 
     const video = await Video.findById(videoId)
 
-    if(!video){
+    if (!video) {
         throw new ApiError(400, "Videos is not exist")
     }
 
     const history = await User.findByIdAndUpdate(
         userId,
         {
-            $push: {
-                watchHistory: {_id: videoId}
+            $pull: {
+                watchHistory: { _id: videoId } // Remove videoId if it exists
             }
         },
+        { new: true }
+    );
+
+    const updatedHistory = await User.findByIdAndUpdate(
+        userId,
         {
-            new: true
-        }
-    )
+            $push: {
+                watchHistory: { _id: videoId }
+            }
+        },
+        { new: true }
+    );
 
-    if(!history) {
-        throw new ApiError(500, "Any problem to store in history")
-    }
+    return res.status(200).json({
+        status: 200,
+        message: "Watch history updated successfully",
+        data: updatedHistory,
+    });
 
-    return res.status(200)
-    .json(new ApiResponse(200, history, "Successfully add in history"))
 })
 
 
-export { publishAVideo, getVideoById, updateVideo, deleteVideo, togglePublishStatus, getAllVideos, addVideoInHistory }
+export {
+    publishAVideo,
+    getVideosByTitle,
+    getChannelVideos,
+    getVideoById,
+    updateVideo,
+    deleteVideo,
+    togglePublishStatus,
+    getSeachVideosOfChannel,
+    addVideoInHistory,
+    handleVideoViews,
+}

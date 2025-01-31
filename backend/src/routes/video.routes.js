@@ -1,5 +1,17 @@
 import { Router } from "express";
-import { getAllVideos, getVideoById, updateVideo, deleteVideo, publishAVideo, togglePublishStatus, addVideoInHistory } from "../controllers/video.controller.js"
+import { 
+    getSeachVideosOfChannel, 
+    getVideoById, 
+    getChannelVideos,
+    updateVideo, 
+    deleteVideo, 
+    publishAVideo, 
+    togglePublishStatus, 
+    addVideoInHistory, 
+    getVideosByTitle,
+    handleVideoViews,
+} from "../controllers/video.controller.js"
+
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js"
 
@@ -8,7 +20,7 @@ const router = Router()
 router.use(verifyJWT)
 
 router.route("/")
-    .get(getAllVideos)
+    .get(getSeachVideosOfChannel)
     .post(
         upload.fields([
             {
@@ -21,14 +33,23 @@ router.route("/")
             }
         ]), publishAVideo)
 
+router.route("/t")
+        .get(getVideosByTitle)
+
+router.route("/c")
+        .get(getChannelVideos)
+
 router.route("/:videoId")
     .get(getVideoById)
     .delete(deleteVideo)
     .patch(upload.single("thumbnail"), updateVideo)
 
+router.route("/view/:videoId/:userId").post(handleVideoViews)
+
 router.route("/add/history/:videoId").patch(addVideoInHistory)
 
 router.route("/toggle/publish/:videoId")
     .patch(togglePublishStatus)
+
 
 export default router

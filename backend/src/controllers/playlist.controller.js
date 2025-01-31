@@ -37,8 +37,6 @@ const getUserPlaylists = asyncHandler(async (req, res) => {
 
     const playlists = await Playlist.find({ owner: userId })
 
-    console.log(playlists)
-
     if (!playlists) {
         throw new ApiError(500, "Any problem in getting playlist")
     }
@@ -70,9 +68,14 @@ const getPlaylistById = asyncHandler(async (req, res) => {
                     {
                         $project: {
                             thumbnail: 1,
+                            isPublished: 1,
                             title: 1,
                             duration: 1,
                             owner: 1,
+                            createdAt: 1,
+                            updatedAt: 1,
+                            description: 1,
+                            
                         }
                     },
                     {
@@ -87,14 +90,47 @@ const getPlaylistById = asyncHandler(async (req, res) => {
                                         username: 1,
                                         email: 1,
                                         avatar: 1,
+                                        fullname: 1,
                                     }
                                 }
                             ]
+                        }
+                    },
+                    {
+                        $addFields: {
+                            owner: {
+                                $first : "$owner"
+                            }
                         }
                     }
                 ]
             }
         },
+        {
+            $lookup: {
+                from: "users",
+                localField: "owner",
+                foreignField: "_id",
+                as: "owner",
+                pipeline: [
+                    {
+                        $project: {
+                            username: 1,
+                            email: 1,
+                            avatar: 1,
+                            fullname: 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $addFields: {
+                owner: {
+                    $first : "$owner"
+                }
+            }
+        }
     ])
 
     if (!playlist[0]) {
@@ -104,6 +140,34 @@ const getPlaylistById = asyncHandler(async (req, res) => {
     return res.status(200)
         .json(new ApiResponse(200, playlist[0], "Successfully Fetched playlist"))
 
+})
+
+const videoExistInPlaylist = asyncHandler(async(req, res) => {
+    const { playlistId, videoId } = req.params
+
+    if (!(isValidObjectId(playlistId) && isValidObjectId(videoId))) {
+        throw new ApiError(400, "playlist and user id is invalid")
+    }
+
+    const alreadyVideoExist = await Playlist.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(playlistId),
+                videos: {
+                    $in: [new mongoose.Types.ObjectId(videoId)]
+                }
+            }
+        }
+    ])
+
+    if(alreadyVideoExist.length > 0){
+        return res.status(200)
+        .json(new ApiResponse(200, true, "Successfully add video in playlist"))
+    }
+    else{
+        return res.status(200)
+        .json(new ApiResponse(200, false, "Successfully add video in playlist"))
+    }
 })
 
 const addVideoToPlaylist = asyncHandler(async (req, res) => {
@@ -119,13 +183,18 @@ const addVideoToPlaylist = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Video is not exists")
     }
 
-    const alreadyVideoExist = await Playlist.findOne({
-        videos: {
-            $in: [videoId]
+    const alreadyVideoExist = await Playlist.aggregate([
+        {
+            $match:{
+                _id: new mongoose.Types.ObjectId(playlistId),
+                videos: {
+                    $in: [new mongoose.Types.ObjectId(videoId)]
+                }
+            }
         }
-    })
+    ])
 
-    if (alreadyVideoExist) {
+    if (alreadyVideoExist.length > 0) {
         throw new ApiError(400, "This video is already exist in playist")
     }
 
@@ -231,4 +300,13 @@ const updatePlaylist = asyncHandler(async (req, res) => {
 
 
 
-export { createPlaylist, getUserPlaylists, getPlaylistById, addVideoToPlaylist, removeVideoFromPlaylist, deletePlaylist, updatePlaylist }
+export { 
+    createPlaylist, 
+    getUserPlaylists, 
+    getPlaylistById, 
+    addVideoToPlaylist, 
+    removeVideoFromPlaylist, 
+    deletePlaylist, 
+    updatePlaylist,
+    videoExistInPlaylist
+}

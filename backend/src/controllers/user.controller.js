@@ -1,6 +1,6 @@
 import { asyncHandler, ApiError, ApiResponse, uploadOnCloudinary, removeOnCloudinary } from "../utils/index.js"
 import { User } from "../models/user.model.js"
-import mongoose from 'mongoose'
+import mongoose, { isValidObjectId } from 'mongoose'
 import jwt from "jsonwebtoken"
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -19,7 +19,6 @@ const generateAccessAndRefreshTokens = async (userId) => {
 
 const registerUser = asyncHandler(async (req, res) => {
     const { fullname, email, username, password } = req.body
-    console.log(req.files)
 
     if (
         [fullname, email, username, password].some((field) => field?.trim() === "")
@@ -38,7 +37,6 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const avatarLocalPath = req.files?.avatar[0]?.path
 
-    console.log(avatarLocalPath)
 
     let coverImageLocalPath;
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
@@ -49,8 +47,8 @@ const registerUser = asyncHandler(async (req, res) => {
         throw new ApiError(400, "avatar Image is required")
     }
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath)
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    const avatar = await uploadOnCloudinary(avatarLocalPath, "image")
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath, "image")
     // when coverImageLocalPath is undefined so cloudinary never throw error
 
     if (!avatar) {
@@ -93,7 +91,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const isPasswordValid = await userDetails.isPasswordCorrect(password) // method is apply by document not by mongodb
 
     if (!isPasswordValid) {
-        throw new ApiError(401, "Password is incorrect")
+        throw new ApiError(400, "Password is incorrect")
     }
 
     const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(userDetails._id) // this method is returned
@@ -215,7 +213,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
         {
             $set: {
                 fullname,
-                email
+                email,
             }
         },
         { new: true } //return after update
@@ -243,7 +241,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     if (!avatarLocalPath) {
         throw new ApiError(400, "Avatar file is missing")
     }
-    const avatar = await uploadOnCloudinary(avatarLocalPath)
+    const avatar = await uploadOnCloudinary(avatarLocalPath, "image")
     if (!avatar.url) {
         throw new ApiError(500, "Error while uploading on avatar")
     }
@@ -269,9 +267,9 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     //add another image
     const coverImageLocalPath = req.file?.path
     if (!coverImageLocalPath) {
-        throw new ApiError(400, "Avatar file is missing")
+        throw new ApiError(400, "coverimage file is missing")
     }
-    const coverImage = await uploadOnCloudinary(coverImageLocalPath)
+    const coverImage = await uploadOnCloudinary(coverImageLocalPath, "image")
     if (!coverImage.url) {
         throw new ApiError(500, "Error while uploading on coverImage")
     }
@@ -318,7 +316,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                 subscribersCount: {
                     $size: "$subscribers" //$ use becoz it's field
                 },
-                channelsSubscribedToCount: {
+                channelsSubscribed: {
                     $size: "$subscribedTo"
                 },
                 isSubscribed: {
@@ -338,8 +336,10 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
                 avatar: 1,
                 coverImage: 1,
                 subscribersCount: 1,
-                channelsSubscribedToCount: 1,
-                isSubscribed: 1
+                channelsSubscribed: 1,
+                isSubscribed: 1,
+                createdAt: 1,
+                updatedAt: 1
             }
         }
     ])
@@ -350,6 +350,34 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 
     return res.status(200)
         .json(new ApiResponse(200, channel[0], "User channel fetched successfully"))
+})
+
+const getUserChannelByName = asyncHandler(async (req, res) => {
+    const { username } = req.params 
+
+    if (!username.trim()) {
+        throw new ApiError(400, "username is missing")
+    }
+
+    const users = await User.aggregate([
+        {
+            $match: {
+                ...(username?{username: {$regex: username, $options: 'i'}} : {})
+            }
+        },
+        {
+            $project: { //select field pass
+                username: 1,
+            }
+        }
+    ])
+
+    if (!users?.length) {
+        throw new ApiError(404, "Channel does not exists")
+    }
+
+    return res.status(200)
+        .json(new ApiResponse(200, users, "User channel fetched successfully"))
 })
 
 const getWatchHistory = asyncHandler(async (req, res) => {
@@ -378,7 +406,8 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                                     $project: {
                                         avatar: 1,
                                         username: 1,
-                                        id: 1
+                                        id: 1,
+                                        fullname: 1,
                                     }
                                 }
                             ]
@@ -401,6 +430,45 @@ const getWatchHistory = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user[0].watchHistory, "watch history fetched successfully"))
 })
 
+const removeVideoFromHistory = asyncHandler(async (req, res) => {
+    const {videoId} = req.params
+    const userId = req.user?._id
+
+    if(!isValidObjectId(videoId)){
+        throw new ApiError(400, "Video id is invalid")
+    }
+
+    const removedHistory = await User.updateOne(
+        {_id: new mongoose.Types.ObjectId(userId)},
+        {$pull: {watchHistory: new mongoose.Types.ObjectId(videoId)}},
+    )
+
+    if(!removedHistory){
+        throw new ApiError(500, "Any problem in removing video from history")
+    }
+
+    return res.status(200)
+    .json(new ApiResponse(200, removedHistory, "Successfully removed"))
+})
+
+const clearHistory = asyncHandler(async (req, res) => {
+    const userId = req.user?._id
+
+    const clearAllHistory = await User.updateOne(
+        {_id: new mongoose.Types.ObjectId(userId)},
+        {$set: {
+            watchHistory: []
+        }},
+    )
+
+    if(!clearAllHistory){
+        throw new ApiError(500, "An error occurred while clearing the history")
+    }
+
+    return res.status(200)
+    .json(new ApiResponse(200, clearAllHistory, "Successfully cleared all history"))
+})
+
 
 export {
     registerUser,
@@ -413,7 +481,10 @@ export {
     updateUserAvatar,
     updateUserCoverImage,
     getUserChannelProfile,
-    getWatchHistory
+    getWatchHistory,
+    removeVideoFromHistory,
+    clearHistory,
+    getUserChannelByName
 }
 
 /*

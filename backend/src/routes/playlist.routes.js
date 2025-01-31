@@ -6,7 +6,8 @@ import {
     addVideoToPlaylist,
     removeVideoFromPlaylist,
     deletePlaylist,
-    updatePlaylist
+    updatePlaylist,
+    videoExistInPlaylist
 } from "../controllers/playlist.controller.js"
 
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -22,6 +23,9 @@ router.route("/:playlistId")
     .get(getPlaylistById)
     .delete(deletePlaylist)
     .patch(updatePlaylist)
+
+router.route("/check-exist/:playlistId/:videoId")
+    .get(videoExistInPlaylist)
 
 router.route("/add/:videoId/:playlistId")
     .patch(addVideoToPlaylist)
