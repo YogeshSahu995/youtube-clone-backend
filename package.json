@@ -4,7 +4,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "node -r dotenv/config src/index.js"
+    "start": "node -r dotenv/config src/index.js"
   },
   "keywords": [
     "javascript",
