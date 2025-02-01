@@ -105,6 +105,7 @@ const loginUser = asyncHandler(async (req, res) => {
     const options = {
         httpOnly: true, // it's protect from clientSide javascript from accessed it 
         secure: true,
+        sameSite: "none",
     }
 
     return res
