@@ -104,8 +104,7 @@ const loginUser = asyncHandler(async (req, res) => {
     // cookie was modiefied by frontend so secure region and modified by only server:- options
     const options = {
         httpOnly: true, // it's protect from clientSide javascript from accessed it 
-        secure: false,
-        sameSite: "Lax",
+        secure: true,
     }
 
     return res
@@ -129,7 +128,7 @@ const logoutUser = asyncHandler(async (req, res) => {
 
     const options = {
         httpOnly: true, // javascript ma accessible nhi hoga
-        secure: false, // agar ye true kerte hai cookie sirf https connection per send hogi only
+        secure: true, // agar ye true kerte hai cookie sirf https connection per send hogi only
     }
 
     return res.status(200)
@@ -163,7 +162,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: false
+            secure: true
         }
 
         res.status(200)
