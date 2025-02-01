@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser"
 const app = express()
 
 app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+    origin: [`${process.env.PORT}`, "https://youtube-clone-frontend-pm99.onrender.com"],
     credentials: true // this allow cookies to be sent along with the request
 }))
 
