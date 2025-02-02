@@ -5,7 +5,7 @@ import cookieParser from "cookie-parser"
 const app = express()
 
 app.use(cors({
-    origin: [`${process.env.PORT}`, "https://zippytube.netlify.app"],
+    origin: [`${process.env.PORT}`],
     credentials: true // this allow cookies to be sent along with the request
 }))
 
