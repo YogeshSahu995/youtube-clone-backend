@@ -57,8 +57,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const user = await User.create({
         fullname,
-        avatar: avatar.url,
-        coverImage: coverImage?.url || "",
+        avatar: avatar.secure_url,
+        coverImage: coverImage?.secure_url || "",
         email,
         password,
         username: username.toLowerCase()
@@ -246,7 +246,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     if (!avatar.url) {
         throw new ApiError(500, "Error while uploading on avatar")
     }
-    user.avatar = avatar.url
+    user.avatar = avatar.secure_url
     await user.save({ validateBeforeSave: false })
 
     return res.status(200)
@@ -274,7 +274,7 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
     if (!coverImage.url) {
         throw new ApiError(500, "Error while uploading on coverImage")
     }
-    user.coverImage = coverImage.url
+    user.coverImage = coverImage.secure_url
     await user.save({ validateBeforeSave: false })
 
     return res.status(200)

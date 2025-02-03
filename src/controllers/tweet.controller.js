@@ -26,7 +26,7 @@ const createTweet = asyncHandler(async (req, res) => {
         {
             owner: user?._id,
             content,
-            image: image.url,
+            image: image.secure_url,
         }
     )
 
@@ -188,7 +188,7 @@ const updateTweets = asyncHandler(async (req, res) => {
         tweetId,
         {
             $set:{
-                image: image?.url,
+                image: image?.secure_url,
                 content: content
             }
         }
