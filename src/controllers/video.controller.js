@@ -638,12 +638,15 @@ const addVideoInHistory = asyncHandler(async (req, res) => {
         userId,
         {
             $push: {
-                watchHistory: { _id: videoId }
+                watchHistory: {
+                    $each: [{ _id: videoId }], // Array to insert
+                    $position: 0 // Insert at the beginning
+                }
             }
         },
         { new: true }
     );
-
+    
     return res.status(200).json({
         status: 200,
         message: "Watch history updated successfully",
