@@ -124,25 +124,25 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
                     as: "channel",
                     pipeline: [
                         {
-                            $project : {
-                            username: 1,
-                            fullname: 1,
-                            avatar: 1,
-                            email: 1,
+                            $project: {
+                                username: 1,
+                                fullname: 1,
+                                avatar: 1,
+                                email: 1,
                             }
                         }
                     ]
                 }
             },
             {
-                $addFields:{
-                    channel:{
+                $addFields: {
+                    channel: {
                         $first: "$channel"
                     }
                 }
             }
         ])
-    
+
         return res.status(200)
             .json(new ApiResponse(200, subscribedChannels, "Successfully fetched all subscribed channels"))
     } catch (error) {

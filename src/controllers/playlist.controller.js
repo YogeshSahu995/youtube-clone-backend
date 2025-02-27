@@ -162,11 +162,11 @@ const videoExistInPlaylist = asyncHandler(async(req, res) => {
 
     if(alreadyVideoExist.length > 0){
         return res.status(200)
-        .json(new ApiResponse(200, true, "Successfully add video in playlist"))
+        .json(new ApiResponse(200, true, "video is exists"))
     }
     else{
         return res.status(200)
-        .json(new ApiResponse(200, false, "Successfully add video in playlist"))
+        .json(new ApiResponse(200, false, "video is not exists"))
     }
 })
 

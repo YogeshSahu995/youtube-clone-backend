@@ -354,7 +354,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 })
 
 const getUserChannelByName = asyncHandler(async (req, res) => {
-    const { username } = req.params 
+    const { username } = req.params
 
     if (!username.trim()) {
         throw new ApiError(400, "username is missing")
@@ -363,7 +363,7 @@ const getUserChannelByName = asyncHandler(async (req, res) => {
     const users = await User.aggregate([
         {
             $match: {
-                ...(username?{username: {$regex: username, $options: 'i'}} : {})
+                ...(username ? { username: { $regex: username, $options: 'i' } } : {})
             }
         },
         {
@@ -432,42 +432,44 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 })
 
 const removeVideoFromHistory = asyncHandler(async (req, res) => {
-    const {videoId} = req.params
+    const { videoId } = req.params
     const userId = req.user?._id
 
-    if(!isValidObjectId(videoId)){
+    if (!isValidObjectId(videoId)) {
         throw new ApiError(400, "Video id is invalid")
     }
 
     const removedHistory = await User.updateOne(
-        {_id: new mongoose.Types.ObjectId(userId)},
-        {$pull: {watchHistory: new mongoose.Types.ObjectId(videoId)}},
+        { _id: new mongoose.Types.ObjectId(userId) },
+        { $pull: { watchHistory: new mongoose.Types.ObjectId(videoId) } },
     )
 
-    if(!removedHistory){
+    if (!removedHistory) {
         throw new ApiError(500, "Any problem in removing video from history")
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, removedHistory, "Successfully removed"))
+        .json(new ApiResponse(200, removedHistory, "Successfully removed"))
 })
 
 const clearHistory = asyncHandler(async (req, res) => {
     const userId = req.user?._id
 
     const clearAllHistory = await User.updateOne(
-        {_id: new mongoose.Types.ObjectId(userId)},
-        {$set: {
-            watchHistory: []
-        }},
+        { _id: new mongoose.Types.ObjectId(userId) },
+        {
+            $set: {
+                watchHistory: []
+            }
+        },
     )
 
-    if(!clearAllHistory){
+    if (!clearAllHistory) {
         throw new ApiError(500, "An error occurred while clearing the history")
     }
 
     return res.status(200)
-    .json(new ApiResponse(200, clearAllHistory, "Successfully cleared all history"))
+        .json(new ApiResponse(200, clearAllHistory, "Successfully cleared all history"))
 })
 
 

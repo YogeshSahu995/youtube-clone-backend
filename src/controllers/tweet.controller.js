@@ -46,9 +46,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
     }
 
     const user = await User.findById(userId)
-    // console.log(user._id) //new ObjectId('672767ece080d6c5f2522c0b') same as from req.user._id or req.user.id
-    // console.log(user.id) //672767ece080d6c5f2522c0b here importance of _id
-    // console.log(userId)
+
 
     if (!user) {
         throw new ApiError(400, "Unauthorized request")

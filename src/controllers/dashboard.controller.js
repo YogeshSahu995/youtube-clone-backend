@@ -3,9 +3,9 @@ import { Video, Subscription, Like } from "../models/index.model.js"
 import { ApiError, ApiResponse, asyncHandler } from "../utils/index.js"
 
 const getChannelStats = asyncHandler(async (req, res) => {
-    const {userId} = req.params
+    const { userId } = req.params
 
-    if(!isValidObjectId(userId)){
+    if (!isValidObjectId(userId)) {
         return new ApiError(400, "UserId is not valid")
     }
 
@@ -82,9 +82,9 @@ const getChannelStats = asyncHandler(async (req, res) => {
 })
 
 const getChannelVideos = asyncHandler(async (req, res) => {
-    const {userId} = req.params
+    const { userId } = req.params
 
-    if(!isValidObjectId(userId)){
+    if (!isValidObjectId(userId)) {
         throw new ApiError(400, "UserId is not valid")
     }
 

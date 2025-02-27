@@ -5,7 +5,6 @@ import mongoose, { isValidObjectId } from "mongoose"
 //manually pagination
 const getVideoComments = asyncHandler(async (req, res) => {
     const { videoId } = req.params
-    const userId = req.user?._id
     const limit = parseInt(req.query?.limit || 10)
     const page = parseInt(req.query?.page || 1)
 
@@ -52,13 +51,13 @@ const getVideoComments = asyncHandler(async (req, res) => {
             }
         },
         {
-            $addFields :{
+            $addFields: {
                 owner: {
                     $arrayElemAt: ["$owner", 0]
                 },
                 isLiked: {
                     $cond: {
-                        if: {$in: [req.user?._id, "$likes.likedBy"]},
+                        if: { $in: [req.user?._id, "$likes.likedBy"] },
                         then: true,
                         else: false
                     }
@@ -76,6 +75,12 @@ const getVideoComments = asyncHandler(async (req, res) => {
                 content: 1,
                 createdAt: 1,
                 updatedAt: 1,
+            }
+        },
+        {
+            $sort: {
+                createdAt: -1,
+                _id: 1,
             }
         },
         {
@@ -174,7 +179,9 @@ const updateComment = asyncHandler(async (req, res) => {
 
 const deleteComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params
-    const userId = req.user?._id // id give string only
+    const userId = req.user?._id
+    // console.log(req.user?._id)  //new ObjectId('67a0610cae454f79090fba28')
+    // console.log(req.user?.id)  //67a0610cae454f79090fba28
 
     if (!isValidObjectId(commentId)) {
         throw new ApiError(400, "comment Id is Invalid")

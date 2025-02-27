@@ -306,7 +306,6 @@ const publishAVideo = asyncHandler(async (req, res) => {
     const videoLocalPath = req.files?.videoFile[0]?.path
     const userID = req.user?._id
 
-    // console.log(req.files)
 
     if (!(title && description)) {
         throw new ApiError(400, "Title and Description is required fields")
@@ -472,7 +471,6 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
     ])
 
-    // console.log(video)
 
     if (!video?.length) {
         throw new ApiError(404, "Video is not exist")
@@ -547,7 +545,6 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     const result = await Video.findByIdAndDelete(videoId)
 
-    // console.log(result)
 
     removeVideoOnCloudinary(result.videoFile)
     removeOnCloudinary(result.thumbnail)
@@ -593,7 +590,6 @@ const handleVideoViews = asyncHandler(async (req, res) => {
     // Ensure the video exists
     const video = await Video.findById(videoId);
     if (!video.views) video.views = []
-    // console.log(video)
     if (!video) {
         throw new ApiError(404, "Video is not found");
     }
@@ -637,16 +633,13 @@ const addVideoInHistory = asyncHandler(async (req, res) => {
     const updatedHistory = await User.findByIdAndUpdate(
         userId,
         {
-            $push: {
-                watchHistory: {
-                    $each: [{ _id: videoId }], // Array to insert
-                    $position: 0 // Insert at the beginning
-                }
+            $addToSet: {
+                watchHistory: { _id: videoId }
             }
         },
         { new: true }
     );
-    
+
     return res.status(200).json({
         status: 200,
         message: "Watch history updated successfully",
