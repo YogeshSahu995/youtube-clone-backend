@@ -12,13 +12,13 @@ const createTweet = asyncHandler(async (req, res) => {
     const { content } = req.body
     const imageLocalPath = req.file?.path
 
-    if(!content.trim() && !imageLocalPath) {
+    if (!content.trim() && !imageLocalPath) {
         throw new ApiError(400, "Image or content is required field")
     }
 
     const image = await uploadOnCloudinary(imageLocalPath, "image")
 
-    if(!image?.url){
+    if (!image?.url) {
         throw new ApiError(500, "Any problem in image upload")
     }
 
@@ -77,8 +77,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
         },
         {
             $lookup: {
-                from : "likes",
-                localField : "_id",
+                from: "likes",
+                localField: "_id",
                 foreignField: "tweet",
                 as: "likes"
             }
@@ -90,7 +90,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
                 },
                 isLiked: {
                     $cond: {
-                        if: {$in: [req.user?._id, "$likes.likedBy"]},
+                        if: { $in: [req.user?._id, "$likes.likedBy"] },
                         then: true,
                         else: false,
                     }
@@ -101,7 +101,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
             }
         },
         {
-            $sort:{
+            $sort: {
                 updatedAt: -1,
             }
         }
@@ -111,8 +111,8 @@ const getUserTweets = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, allTweets, "Successfully fetched tweets"))
 })
 
-const getTweetById = asyncHandler(async(req, res) => {
-    const {tweetId} = req.params
+const getTweetById = asyncHandler(async (req, res) => {
+    const { tweetId } = req.params
 
     if (!isValidObjectId(tweetId)) {
         throw new ApiError(400, "tweet id is not valid")
@@ -120,11 +120,11 @@ const getTweetById = asyncHandler(async(req, res) => {
 
     const tweet = await Tweet.findById(tweetId)
 
-    if(tweet){
+    if (tweet) {
         return res.status(200)
-        .json(new ApiResponse(200, tweet, "Successfully fetch tweet by id"))
+            .json(new ApiResponse(200, tweet, "Successfully fetch tweet by id"))
     }
-    else{
+    else {
         throw new ApiError(500, "Tweet is not exist by this id")
     }
 })
@@ -185,7 +185,7 @@ const updateTweets = asyncHandler(async (req, res) => {
     const updatedTweet = await Tweet.findByIdAndUpdate(
         tweetId,
         {
-            $set:{
+            $set: {
                 image: image?.secure_url,
                 content: content
             }
@@ -209,8 +209,8 @@ const deleteTweet = asyncHandler(async (req, res) => {
     if (!isValidObjectId(tweetId)) {
         throw new ApiError(400, "tweetId is Invalid")
     }
-
-    const validateowner = await Tweet.findOne(
+    
+    const tweetExist = await Tweet.findOne(
         {
             $and: [
                 { owner: userId },
@@ -219,8 +219,16 @@ const deleteTweet = asyncHandler(async (req, res) => {
         }
     )
 
-    if (!validateowner) {
+    if (!tweetExist) {
         throw new ApiError(400, "Owner is not current user")
+    }
+    
+    if (tweetExist?.image) {
+        const response = await removeOnCloudinary(tweetExist.image);
+        
+        if (!response) {
+            throw new ApiError(500, "Failed to delete the previous image");
+        }
     }
 
     const result = await Tweet.findByIdAndDelete(tweetId)
