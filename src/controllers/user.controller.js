@@ -139,7 +139,8 @@ const logoutUser = asyncHandler(async (req, res) => {
 })
 
 const refreshAccessToken = asyncHandler(async (req, res) => {
-    const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+    const incomingRefreshToken = req.cookies.refreshToken
+    console.log(incomingRefreshToken)
 
     if (!incomingRefreshToken) {
         throw new ApiError(401, "unauthorized request!!")
@@ -154,7 +155,6 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
             throw new ApiError(401, "Invalid Refresh Token")
         }
 
-        // when user logout so refreshtoken == 1; like insta
         if (incomingRefreshToken !== user?.refreshToken) {
             throw new ApiError(401, "Refresh token is expired or used")
         }
@@ -163,7 +163,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
 
         const options = {
             httpOnly: true,
-            secure: true
+            secure: false
         }
 
         res.status(200)

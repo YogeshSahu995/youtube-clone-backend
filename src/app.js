@@ -39,6 +39,16 @@ app.use("/api/v1/dashboard", dashboardRouter)
 app.use("/api/v1/playlist", playlistRouter)
 app.use("/api/v1/healthcheck", healthcheckRouter)
 
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(err.statusCode || 500)
+    .json({ 
+        status: err.statusCode || 500,
+        message: err.message || 'internal server error' ,
+        success: false, 
+    });
+});
+
 /*
 ye mount middleware :- means here a base path where the middleware or router mounted. Any request that starts with '/api/v1/users' will be handled by router (or middleware) which is passed as the second argument
 http://localhost:8000/api/v1/users/register
