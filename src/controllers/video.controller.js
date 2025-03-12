@@ -1,4 +1,4 @@
-import { ApiError, ApiResponse, asyncHandler, uploadOnCloudinary, removeOnCloudinary, removeVideoOnCloudinary } from "../utils/index.js"
+import { ApiError, ApiResponse, asyncHandler, uploadOnCloudinary, removeOnCloudinary } from "../utils/index.js"
 import { Video } from "../models/video.model.js"
 import { User } from "../models/user.model.js"
 import mongoose, { isValidObjectId } from "mongoose"
@@ -545,8 +545,7 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     const result = await Video.findByIdAndDelete(videoId)
 
-
-    removeVideoOnCloudinary(result.videoFile)
+    removeOnCloudinary(result.videoFile, "video")
     removeOnCloudinary(result.thumbnail)
 
     if (!result) {
