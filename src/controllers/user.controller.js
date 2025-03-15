@@ -49,7 +49,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const avatar = await uploadOnCloudinary(avatarLocalPath, "image")
     const coverImage = await uploadOnCloudinary(coverImageLocalPath, "image")
-    // when coverImageLocalPath is undefined so cloudinary never throw error
+    // when coverImageLocalPath is undefined so cloudinaryUploaderFunction never throw error bcoz it's handle in catch
 
     if (!avatar) {
         throw new ApiError(400, "avatar Image is required")
