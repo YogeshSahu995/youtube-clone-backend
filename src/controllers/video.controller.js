@@ -619,7 +619,7 @@ const addVideoInHistory = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Videos is not exist")
     }
 
-    const history = await User.findByIdAndUpdate(
+    await User.findByIdAndUpdate(
         userId,
         {
             $pull: {
@@ -632,8 +632,11 @@ const addVideoInHistory = asyncHandler(async (req, res) => {
     const updatedHistory = await User.findByIdAndUpdate(
         userId,
         {
-            $addToSet: {
-                watchHistory: { _id: videoId }
+            $push: {
+                watchHistory: {
+                    $each:[videoId],
+                    $position: 0
+                }
             }
         },
         { new: true }
