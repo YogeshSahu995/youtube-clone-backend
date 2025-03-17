@@ -634,7 +634,7 @@ const addVideoInHistory = asyncHandler(async (req, res) => {
         {
             $push: {
                 watchHistory: {
-                    $each:[videoId],
+                    $each:[new mongoose.Types.ObjectId(videoId)],
                     $position: 0
                 }
             }
