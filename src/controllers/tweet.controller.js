@@ -88,7 +88,7 @@ const getUserTweets = asyncHandler(async (req, res) => {
                     }
                 },
                 likes: {
-                    $size: "$likes"
+                    $size: {$ifNull: ["$likes",[]]}
                 }
             }
         },

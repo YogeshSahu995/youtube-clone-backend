@@ -25,7 +25,6 @@ const videoSchema = new Schema(
         },
         views:{
             type:[Schema.Types.ObjectId],
-            ref: "User",
             default: []
         },
         isPublished: {

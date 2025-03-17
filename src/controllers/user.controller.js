@@ -281,10 +281,9 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, user, "succesfully changed coverImage"))
 })
 
-//most imp controller
+
 const getUserChannelProfile = asyncHandler(async (req, res) => {
-    const { username } = req.params //search name
-    // const username = req.params.username
+    const { username } = req.params //s
 
     if (!username.trim()) {
         throw new ApiError(400, "username is missing")
@@ -297,15 +296,15 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
             }
         },
         {
-            $lookup: { // duser collection ke document se match karega 
+            $lookup: {
                 from: "subscriptions",
                 localField: "_id",
                 foreignField: "channel",
-                as: "subscribers" // it's return [{channel:"same", subscriber:""}, {}]
+                as: "subscribers"
             }
         },
         {
-            $lookup: { // this array for hum kitne channels ke subscriber hai 
+            $lookup: {
                 from: "subscriptions",
                 localField: "_id",
                 foreignField: "subscriber",
@@ -315,14 +314,14 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
         {
             $addFields: {
                 subscribersCount: {
-                    $size: "$subscribers" //$ use becoz it's field
+                    $size: {$ifNull: ["$subscribers", []]} //?? nullish operator
                 },
                 channelsSubscribed: {
-                    $size: "$subscribedTo"
+                    $size: {$ifNull: ["$subscribedTo", []]}
                 },
                 isSubscribed: {
                     $cond: {
-                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },//Yes, exactly! In MongoDB's aggregation framework, you can access fields in nested arrays and objects directly using dot notation without needing to explicitly loop through the array. This feature is part of how MongoDB allows you to work with complex data structures efficiently.
+                        if: { $in: [req.user?._id, "$subscribers.subscriber"] },
                         then: true,
                         else: false
                     }

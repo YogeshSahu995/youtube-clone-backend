@@ -54,7 +54,7 @@ const getChannelStats = asyncHandler(async (req, res) => {
         {
             $addFields: {
                 likeCount: {
-                    $size: "$video" // how many docs is create by like module of a video
+                    $size: {$ifNull: ["$video", []]} // how many docs is create by like module of a video
                 }
             }
         },
@@ -105,7 +105,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
         {
             $addFields: {
                 likes: {
-                    $size: "$like"
+                    $size: {$ifNull: ["$like", []]}
                 }
             }
         },
@@ -120,7 +120,7 @@ const getChannelVideos = asyncHandler(async (req, res) => {
         {
             $addFields: {
                 comments: {
-                    $size: "$comment"
+                    $size: {$ifNull: ["$comment", []]}
                 }
             }
         },

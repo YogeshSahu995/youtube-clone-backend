@@ -119,24 +119,6 @@ const getChannelVideos = asyncHandler(async (req, res) => {
             }
         },
         {
-            $addFields: {
-                likes: {
-                    $size: "$like"
-                }
-            }
-        },
-        {
-            $addFields: {
-                views: {
-                    $cond: {
-                        if: { $isArray: "$views" },
-                        then: { $size: "$views" },
-                        else: 0
-                    }
-                }
-            }
-        },
-        {
             $lookup: {
                 from: "comments",
                 localField: "_id",
@@ -146,13 +128,15 @@ const getChannelVideos = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
+                likes: {
+                    $size:{$ifNull: ["$like", []]}
+                },
+                views: {
+                    $size: {$ifNull: ["$views", []]}
+                },
                 comments: {
-                    $size: "$comment"
-                }
-            }
-        },
-        {
-            $addFields: {
+                    $size: {$ifNull: ["$comment", []]}
+                },
                 owner: {
                     $first: "$owner"
                 }
@@ -252,11 +236,9 @@ const getSeachVideosOfChannel = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
-                likes: { $size: "$like" },
-                comments: { $size: "$comment" },
-                views: {
-                    $cond: { if: { $isArray: "$views" }, then: { $size: "$views" }, else: 0 }
-                },
+                likes: { $size: {$ifNull: ["$like",[]]} },
+                comments: { $size: {$ifNull: ["$comment",[]]}},
+                views: { $size:{$ifNull: ["$views", []]}},
                 owner: { $first: "$owner" }
             }
         },
@@ -377,7 +359,7 @@ const getVideoById = asyncHandler(async (req, res) => {
                     {
                         $addFields: {
                             subscribersCount: {
-                                $size: "$subscribers"
+                                $size: {$ifNull: ["$subscribers",[]]}
                             },
                             isSubscribed: {
                                 $cond: {
@@ -412,7 +394,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         {
             $addFields: {
                 likes: {
-                    $size: "$likes"
+                    $size: {$ifNull: ["$likes", []]}
                 },
                 isLiked: {
                     $cond: {
@@ -425,14 +407,8 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
-                views: {
-                    $cond: {
-                        if: { $isArray: "$views" },
-                        then: { $size: "$views" },
-                        else: 0
-                    }
+                views: { $size: {$ifNull: ["$views", []]} }
                 }
-            }
         },
         {
             $lookup: {
@@ -444,9 +420,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
-                comments: {
-                    $size: "$comment"
-                }
+                comments: { $size: {$ifNull: ["$comment", []]} }
             }
         },
         {
