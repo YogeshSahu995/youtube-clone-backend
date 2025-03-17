@@ -623,7 +623,7 @@ const addVideoInHistory = asyncHandler(async (req, res) => {
         userId,
         {
             $pull: {
-                watchHistory: { _id: videoId } // Remove videoId if it exists
+                watchHistory: videoId // Remove videoId if it exists
             }
         },
         { new: true }
