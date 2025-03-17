@@ -1,7 +1,6 @@
 import { ApiError, ApiResponse, asyncHandler, uploadOnCloudinary, removeOnCloudinary } from "../utils/index.js"
 import { User } from "../models/user.model.js"
 import { Tweet } from "../models/tweet.model.js"
-import fs from "fs"
 import mongoose, { isValidObjectId } from "mongoose"
 
 
@@ -42,20 +41,13 @@ const getUserTweets = asyncHandler(async (req, res) => {
     const { userId } = req.params
 
     if (!isValidObjectId(userId)) {
-        throw new ApiError(400, "unauthorized request")
-    }
-
-    const user = await User.findById(userId)
-
-
-    if (!user) {
-        throw new ApiError(400, "Unauthorized request")
+        throw new ApiError(400, "UserID is invalide")
     }
 
     const allTweets = await Tweet.aggregate([
         {
             $match: {
-                owner: user._id //new ObjectId('672767ece080d6c5f2522c0b') when user.id = 672767ece080d6c5f2522c0b If user._id is already an ObjectId (which it typically is when retrieved from Mongoose), you can use it directly in the $match stage without needing mongoose.Types.ObjectId(user._id).
+                owner: new mongoose.Types.ObjectId(userId)
             }
         },
         {
@@ -146,42 +138,25 @@ const updateTweets = asyncHandler(async (req, res) => {
     }
 
     // Validate ownership
-    const validateOwner = await Tweet.findOne({ _id: tweetId, owner: userId });
-    if (!validateOwner) {
+    const isOwnTweet = await Tweet.findOne({ _id: tweetId, owner: userId });
+    if (!isOwnTweet) {
         throw new ApiError(403, "User does not own this tweet");
     }
 
-    let image;
-
-    try {
-        if (imageLocalPath) {
-            // Remove the previous image from Cloudinary
-            const prevTweet = await Tweet.findById(tweetId);
-            if (prevTweet?.image) {
-                const response = await removeOnCloudinary(prevTweet.image);
-                if (!response) {
-                    throw new ApiError(500, "Failed to delete the previous image");
-                }
-            }
-
-            // Upload the new image to Cloudinary
-            image = await uploadOnCloudinary(imageLocalPath, "image");
-            if (!image) {
-                throw new ApiError(500, "Failed to upload the new image");
-            }
-        }
-    } finally {
-        // Cleanup local file after Cloudinary operation
-        if (imageLocalPath && fs.existsSync(imageLocalPath)) {
-            try {
-                await fs.unlinkSync(imageLocalPath);
-            } catch (err) {
-                console.error("Error deleting file:", err);
-            }
-        }
+    if (!imageLocalPath) {
+        throw new ApiError(400, "image file is required")
     }
 
-    // Update the tweet
+    const response = await removeOnCloudinary(isOwnTweet?.image);
+    if (!response) {
+        throw new ApiError(500, "Failed to delete the previous image");
+    }
+
+    const image = await uploadOnCloudinary(imageLocalPath, "image");
+    if (!image) {
+        throw new ApiError(500, "Failed to upload the new image");
+    }
+
     const updatedTweet = await Tweet.findByIdAndUpdate(
         tweetId,
         {
@@ -201,7 +176,6 @@ const updateTweets = asyncHandler(async (req, res) => {
         .json(new ApiResponse(200, updatedTweet, "Successfully updated the tweet"));
 });
 
-
 const deleteTweet = asyncHandler(async (req, res) => {
     const { tweetId } = req.params
     const userId = req.user?._id
@@ -209,7 +183,7 @@ const deleteTweet = asyncHandler(async (req, res) => {
     if (!isValidObjectId(tweetId)) {
         throw new ApiError(400, "tweetId is Invalid")
     }
-    
+
     const tweetExist = await Tweet.findOne(
         {
             $and: [
@@ -222,10 +196,10 @@ const deleteTweet = asyncHandler(async (req, res) => {
     if (!tweetExist) {
         throw new ApiError(400, "Owner is not current user")
     }
-    
+
     if (tweetExist?.image) {
         const response = await removeOnCloudinary(tweetExist.image);
-        
+
         if (!response) {
             throw new ApiError(500, "Failed to delete the previous image");
         }

@@ -1,6 +1,6 @@
 import { asyncHandler, ApiError, ApiResponse, uploadOnCloudinary, removeOnCloudinary } from "../utils/index.js"
 import { User } from "../models/user.model.js"
-import mongoose, { isValidObjectId } from 'mongoose'
+import { isValidObjectId } from 'mongoose'
 import jwt from "jsonwebtoken"
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -382,11 +382,11 @@ const getUserChannelByName = asyncHandler(async (req, res) => {
 })
 
 const getWatchHistory = asyncHandler(async (req, res) => {
-    // req.user._id // Interview :- ye string hi pass kerta hai mongodb objectId nhi kerta jab hum koi query use kerte hai to mongoose behind the seen string ko as ObjectId use kerta hai
+
     const user = await User.aggregate([
         {
             $match: {
-                _id: new mongoose.Types.ObjectId(req.user._id) //but yha per mongoose kaam nhi kerta (manually)
+                _id: req.user._id
             }
         },
         {
@@ -395,14 +395,14 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                 localField: "watchHistory",
                 foreignField: "_id",
                 as: "watchHistory",
-                pipeline: [ // when fetched the document of video also run $lookup for owner field 
+                pipeline: [ 
                     {
                         $lookup: {
-                            from: "users", //// Join with users collection for video owner details
+                            from: "users", 
                             localField: "owner",
                             foreignField: "_id",
                             as: "owner",
-                            pipeline: [ //when fetched the document with also run $project for specific field of user was store in owner field
+                            pipeline: [ 
                                 {
                                     $project: {
                                         avatar: 1,
@@ -412,7 +412,7 @@ const getWatchHistory = asyncHandler(async (req, res) => {
                                     }
                                 }
                             ]
-                        } //owner: [{owner..}]
+                        }
                     },
                     {
                         $addFields: {
@@ -425,7 +425,6 @@ const getWatchHistory = asyncHandler(async (req, res) => {
             }
         }
     ])
-    //AGGREGATE A
 
     return res.status(200)
         .json(new ApiResponse(200, user[0].watchHistory, "watch history fetched successfully"))
@@ -439,9 +438,11 @@ const removeVideoFromHistory = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Video id is invalid")
     }
 
-    const removedHistory = await User.updateOne(
-        { _id: new mongoose.Types.ObjectId(userId) },
-        { $pull: { watchHistory: new mongoose.Types.ObjectId(videoId) } },
+    const removedHistory = await User.findByIdAndUpdate(
+        userId,
+        { 
+            $pull: { watchHistory: videoId} 
+        },
     )
 
     if (!removedHistory) {
@@ -455,8 +456,8 @@ const removeVideoFromHistory = asyncHandler(async (req, res) => {
 const clearHistory = asyncHandler(async (req, res) => {
     const userId = req.user?._id
 
-    const clearAllHistory = await User.updateOne(
-        { _id: new mongoose.Types.ObjectId(userId) },
+    const clearAllHistory = await User.findByIdAndUpdate(
+        userId,
         {
             $set: {
                 watchHistory: []

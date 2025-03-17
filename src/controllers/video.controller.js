@@ -350,7 +350,7 @@ const getVideoById = asyncHandler(async (req, res) => {
     const { videoId } = req.params
 
     if (!isValidObjectId(videoId)) {
-        throw new ApiError(400, "Invalid Video Id")
+        throw new ApiError(400, "videoId is invalide")
     }
 
     const video = await Video.aggregate([

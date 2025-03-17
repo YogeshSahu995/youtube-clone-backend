@@ -98,7 +98,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
         totalDocs: totalComments,
         limit,
         page,
-        totalPages: Math.ceil(totalComments / limit) //match.ceil roundoff to next higher integer
+        totalPages: Math.ceil(totalComments / limit)
     }
 
     return res.status(200)
@@ -106,7 +106,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
 })
 
 const addComment = asyncHandler(async (req, res) => {
-    const userId = req.user?._id // do not give _id
+    const userId = req.user?._id
     const { videoId } = req.params
     const { content } = req.body
 
@@ -139,16 +139,6 @@ const updateComment = asyncHandler(async (req, res) => {
 
     const comment = await Comment.findById(commentId)
 
-    /*
-
-    if(comment.owner !== userId){
-        throw new ApiError(400, "Unauthorized request : current user is not owner of comment")
-    }
-        Why this not work properly?
-    -> The issue here is that in JavaScript, even though two ObjectId instances may contain the same value, they are different instances of objects in memory.This means that comment.owner !== userId will evaluate as true because !== checks for strict inequality, which considers object references (memory addresses) rather than their values.
-
-    */
-
     if (!comment.owner.equals(userId)) {
         throw new ApiError(400, "current user is not owner of comment")
     }
@@ -180,8 +170,6 @@ const updateComment = asyncHandler(async (req, res) => {
 const deleteComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params
     const userId = req.user?._id
-    // console.log(req.user?._id)  //new ObjectId('67a0610cae454f79090fba28')
-    // console.log(req.user?.id)  //67a0610cae454f79090fba28
 
     if (!isValidObjectId(commentId)) {
         throw new ApiError(400, "comment Id is Invalid")

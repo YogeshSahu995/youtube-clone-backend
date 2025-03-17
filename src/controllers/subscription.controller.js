@@ -10,22 +10,18 @@ const toggleSubscription = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Channel Id is invailid")
     }
 
-    const currUser = await User.findById(req.user?._id) // auth middleware - current user 
-
-    if (!currUser) {
-        throw new ApiError(400, "unauthorized request")
-    }
+    const currUserId = req.user?._id
 
     const channel = await User.findById(channelId)
 
     const alreadySubscribed = await Subscription.findOne({
         $and: [
             { channel: channel?._id },
-            { subscriber: currUser?._id }
+            { subscriber: currUserId }
         ]
     })
 
-    if (alreadySubscribed) { // becoz of find() always return empty array
+    if (alreadySubscribed) { 
         const result = await Subscription.findByIdAndDelete(alreadySubscribed?._id)
 
         if (!result) {
@@ -37,7 +33,7 @@ const toggleSubscription = asyncHandler(async (req, res) => {
     }
 
     const newSubscriber = await Subscription.create({
-        subscriber: currUser?._id,
+        subscriber: currUserId,
         channel: channel?._id
     })
 
@@ -56,7 +52,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
         throw new ApiError(400, "Please give valid id of channel")
     }
 
-    const channel = User.findById(channelId)
+    const channel = await User.findById(channelId)
 
     if (!channel) {
         throw new ApiError(400, "This id based channel not exist")
@@ -65,7 +61,7 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
     const allSubscribers = await Subscription.aggregate([
         {
             $match: {
-                channel: new mongoose.Types.ObjectId(channel?._id),
+                channel: channel?._id,
             }
         },
         {
