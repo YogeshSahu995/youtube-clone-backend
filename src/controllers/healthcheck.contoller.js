@@ -10,6 +10,6 @@ export const healthcheck = asyncHandler(async (req, res) => {
     }
     else {
         return res.status(503)
-            .json(new ApiResponse(503, { status: "Internal Issue" }, "Service is unavilable"))
+            .json(new ApiError(503, { status: "Internal Issue" }, "Service is unavilable"))
     }
 })

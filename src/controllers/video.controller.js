@@ -197,7 +197,8 @@ const getSeachVideosOfChannel = asyncHandler(async (req, res) => {
         {
             $match: {
                 ...(userId ? { owner: new mongoose.Types.ObjectId(userId) } : {}),
-                ...(query ? { title: { $regex: query, $options: "i" } } : {})
+                ...(query ? { title: { $regex: query, $options: "i" } } : {}),
+                isPublished: true
             }
         },
         {
@@ -408,7 +409,7 @@ const getVideoById = asyncHandler(async (req, res) => {
         {
             $addFields: {
                 views: { $size: {$ifNull: ["$views", []]} }
-                }
+            }
         },
         {
             $lookup: {
