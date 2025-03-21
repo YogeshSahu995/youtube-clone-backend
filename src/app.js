@@ -5,14 +5,14 @@ import cookieParser from "cookie-parser"
 const app = express()
 
 app.use(cors({
-    origin: [`${process.env.CORS_ORIGIN}`, "http://localhost:5173"],
-    credentials: true // this allow cookies to be sent along with the request
+    origin: [`${process.env.CORS_ORIGIN}`],
+    credentials: true
 }))
 
-app.use(express.json({ limit: "16kb" })) //form data 
-app.use(express.urlencoded({ extended: true, limit: "16kb" })) //yogesh%20kumar to yogesh kumar & extended usefull for nested object 
+app.use(express.json({ limit: "16kb" })) 
+app.use(express.urlencoded({ extended: true, limit: "16kb" }))
 app.use(express.static("public"))
-app.use(cookieParser()) //
+app.use(cookieParser()) 
 
 
 //routes import 
@@ -27,6 +27,7 @@ import {
     playlistRouter,
     healthcheckRouter
 } from "./routes/index.routes.js"
+
 //routes declaration
 app.use("/api/v1/users", userRouter)
 app.use("/api/v1/subscriptions", subscriptionRouter)
@@ -38,6 +39,7 @@ app.use("/api/v1/dashboard", dashboardRouter)
 app.use("/api/v1/playlist", playlistRouter)
 app.use("/api/v1/healthcheck", healthcheckRouter)
 
+//error handler middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(err.statusCode || 500)
@@ -47,11 +49,6 @@ app.use((err, req, res, next) => {
         success: false, 
     });
 });
-
-/*
-ye mount middleware :- means here a base path where the middleware or router mounted. Any request that starts with '/api/v1/users' will be handled by router (or middleware) which is passed as the second argument
-http://localhost:8000/api/v1/users/register
-*/
 
 
 export { app } 
